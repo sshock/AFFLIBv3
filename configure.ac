@@ -81,7 +81,7 @@ AC_STRUCT_ST_RDEV
 
 
 # Specific headers that I plan to use
-AC_CHECK_HEADERS([arpa/inet.h assert.h ctype.h dmalloc.h err.h errno.h fcntl.h getopt.h inttypes.h linux/fs.h malloc.h netinet/in.h regex.h signal.h stdint.h stdio.h stdlib.h string.h sys/cdefs.h sys/disk.h sys/file.h sys/ioctl.h sys/ioctl.h sys/param.h sys/param.h sys/socket.h sys/signal.h sys/stat.h sys/time.h sys/types.h sys/vfs.h sysexits.h term.h time.h unistd.h zlib.h _mingw.h])
+AC_CHECK_HEADERS([arpa/inet.h assert.h ctype.h dmalloc.h err.h errno.h fcntl.h getopt.h inttypes.h linux/fs.h malloc.h ncurses/term.h netinet/in.h regex.h signal.h stdint.h stdio.h stdlib.h string.h sys/cdefs.h sys/disk.h sys/file.h sys/ioctl.h sys/ioctl.h sys/param.h sys/param.h sys/socket.h sys/signal.h sys/stat.h sys/time.h sys/types.h sys/vfs.h sysexits.h term.h time.h unistd.h zlib.h _mingw.h])
 
 AC_CHECK_LIB([regex],[regcomp])        # see if we need -lregex
 
@@ -115,9 +115,10 @@ AC_LANG_POP([C++])
 AC_CHECK_HEADERS([readline/readline.h])
 AC_CHECK_HEADERS([curses.h termcap.h])
 AC_CHECK_LIB([readline],[readline],, AC_MSG_RESULT([readline not installed]))
+AC_CHECK_LIB([ncurses],[initscr],, AC_MSG_RESULT([ncurses not installed]))
 AC_CHECK_LIB([z],[uncompress],, AC_MSG_ERROR([zlib not installed; cannot continue. Try adding zlib-dev or zlib1g-dev.]))
 AC_CHECK_LIB([rt],[aio_error64])
-AC_SEARCH_LIBS(tgetent, termlib termcap curses)
+AC_SEARCH_LIBS(tgetent, termlib termcap tinfo curses ncurses)
 AC_CHECK_FUNCS(putp tputs tgoto tgetstr tgetnum gotorc beep endwin setupterm printw)
 
 ################################################################
