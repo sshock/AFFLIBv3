@@ -26,7 +26,7 @@ affstats_SOURCES = affstats.cpp
 affverify_SOURCES = affverify.cpp aff_bom.h aff_bom.cpp
 affxml_SOURCES = affxml.cpp unix4win32.h
 
-AM_CPPFLAGS = -I@top_srcdir@/lib/
+AM_CPPFLAGS = -I@top_srcdir@/lib -I@top_srcdir@/include/afflib
 LDADD = @top_builddir@/lib/libafflib.la 
 
 affuse_CFLAGS = @FUSE_CFLAGS@
