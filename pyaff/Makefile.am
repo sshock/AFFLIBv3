@@ -11,6 +11,6 @@ install-exec-local:
 	cd $(srcdir) && $(PYTHON) setup.py \
 		build --build-base $(abs_builddir)/build \
 		egg_info --egg-base $(abs_builddir) \
-		install --prefix $(prefix) --single-version-externally-managed --record=$(abs_builddir)/installed.txt \
+		install --prefix $(DESTDIR)$(prefix) --single-version-externally-managed --record=$(abs_builddir)/installed.txt \
 		bdist_egg --dist-dir $(abs_builddir)/dist
 endif
