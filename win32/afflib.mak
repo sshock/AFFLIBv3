@@ -25,7 +25,7 @@ all:   $(TARGETS)
 
 INCS =	/I.\
 	/Izlib-1.2.3\ \
-	/I..\lib \
+	/I..\include\afflib \
 	/I..\lzma443\C \
 	/I..\lzma443\C\7zip\Compress\LZMA_Alone \
 	/I$(EXPATDIR) \
