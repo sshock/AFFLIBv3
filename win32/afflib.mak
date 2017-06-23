@@ -38,7 +38,7 @@ CC=cl
 
 # removed: /Gm - enable minimal rebuild; generated internal compiler error
 
-OTHER_FLAGS = /c /nologo /EHsc /RTC1 /RTCs /W2 $(COMPILER_MODE)
+OTHER_FLAGS = /c /nologo /EHsc /W2 $(COMPILER_MODE)
 
 CPPFLAGS=$(INCS) $(DEFS) $(OTHER_FLAGS) /Fp"afflib.pch" /Fo$*.obj
 CFLAGS=$(INCS) $(DEFS) $(OTHER_FLAGS) /Fp"afflib.pch" /Fo$*.obj
