@@ -1,6 +1,22 @@
-Information for compiling AFFLIB 3.4.2 under Windows / Microsoft
-Visual C++. As of version 3.6.0 this information is obsolete since we
-now compile under mingw.
+       Building AFFLIB under Windows / Microsoft Visual C++
+
+
+The instructions below were written for compiling AFFLIB 3.4.2
+with MSVC 2008, and were declared obsolete at version 3.6.0
+in favor of building with MinGW.
+
+But I personally have never built AFFLIB with MinGW, whereas
+I have built with MSVC 2010 and even MSVC 2015.  Though I did
+not use the steps below, so they have not been verified and
+may be horribly outdated and broken.  Use at your own risk.
+
+The library itself (afflib.lib) does build with MSVC, but the tools
+may not.  Last I heard someone tried and did not succeed because
+they rely on a windows version of getopt.c (not provided).
+
+Phillip Hellewell
+July 23, 2017
+
 ================================================================
 
 Introduction

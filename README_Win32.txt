@@ -1,50 +1,43 @@
 		       Using AFF Tool Under Microsoft Windows (Win32)
 
 
-There are two ways to use AFFLIB with Windows: you can download the
-pre-compiled executables, or you can compile your own.  The advantage
-of the pre-compiled executables is that they work. The advantage of
-compiling the executables yourself is that you can modify them.
+There may have been pre-compiled executables of AFFLIB available for
+download once upon a time (not sure as I have never seen them).  But
+currently there is not any, and has not been for a long time.
 
-Downloading and Installing
-==========================
-You can download the current version of AFF Tools from:
+Also, the steps below to compile from source have not been verified
+and may be horribly outdated.  Use at your own risk.
 
-    https://github.com/simsong/AFFLIBv3
-
-The ZIP file contains:
-    * pre-compiled executables for AFF Tools
-    * lib32eay.dll, the OpenSSL DLL (cryptography support for AFFLIB)
-    * bulk_extractor jar and bat file. (Use the bat file to run the jar file)
-
-Install these tools by:
-
-1. Unzip the archive into the c:\afflib directory.
-2. Add c:\afflib to your system PATH directory by:
-   a. Opening the System control panel.
-   b. Clicking the "Environment Variables" button.
-   c. Adding "c:\afflib;" to the beginning of the PATH environment variable.
+Phillip Hellewell
+July 23, 2017
 
 
 *******************************
 Compiling under Windows
 
-There are three ways to compile for Windows:
-1 - Cross-compiling from a Linux or Mac system with mingw.
-2 - Compiling natively on Windows using mingw.
-3 - Compiling natively on Windows using cygwin (untested)
-
-Cross-compiling from Linux or Mac using MINGW:
-*********************************************
-
-* Cross-compiling works fine, but it does not include the version 4.x
-  GCC compiler and pthreads does not appear to work properly.
-
-* We used to install with mingw cross-compiling, but that created problems with multi-threading
+There are two ways to compile for Windows:
+1 - Compiling natively on Windows using MSVC. (Works for library but not tools).
+2 - Compiling natively on Windows using mingw. (UNTESTED)
 
 
-Compiling natively under Windows with MINGW:
-*******************************************
+Compiling natively on Windows with MSVC:
+****************************************
+See win32/README_MSVC++.txt 
+
+Note: I personally have not verified the steps in that readme, and it too is
+quite outdated and may have errors.
+
+I do know that the library itself (afflib.lib) does build with MSVC.  I have
+built it myself with both VS2010 and VS2015.  However, the tools I have not
+built, and last I heard someone tried and did not succeed because they rely
+on a windows version of getopt.c (not provided).
+
+Phillip Hellewell
+July 23, 2017
+
+
+Compiling natively on Windows with MINGW:  (UNTESTED)
+*****************************************
 
   Download the Windows Resource Kit from:
   http://www.microsoft.com/downloads/details.aspx?familyid=9d467a69-57ff-4ae7-96ee-b18c4790cffd&displaylang=en
@@ -90,8 +83,6 @@ Compiling natively under Windows with MINGW:
   Still problematic, though, is actually running what is produced. Unless you link -static you will have
   a lot of DLL references. Most of the DLLs are installed in /usr/local/bin/*.dll and /bin/*.dll and elsewhere,
   which maps typically to c:\mingw\msys\1.0\local\bin and c:\mingw\bin\
-
-
 
 
 Compiling your own copy:
@@ -156,5 +147,5 @@ To verify a diskprint
    % afdiskprint -x myfile.xml myfile.iso
 
 
-
 Verifying the AFFLIB Digital Signature
+
