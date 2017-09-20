@@ -139,7 +139,7 @@ int split_raw_increment_fname (char *fn)
     }
 
     /* Increment */
-    if(incval(ext[2],10)){
+    if(incval(ext[2],36)){
 	if(incval(ext[1],36)){
 	    if(incval(ext[0],36)){
 		return EINVAL;
