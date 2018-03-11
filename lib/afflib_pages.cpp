@@ -223,7 +223,6 @@ int af_get_page(AFFILE *af,int64_t pagenum,unsigned char *data,size_t *bytes)
 	if(af->image_pagesize <= 0 || af->image_pagesize > 16*1024*1024)
 	    return -1;
 
-
 	/* Now uncompress directly into the buffer provided by the caller, unless the caller didn't
 	 * provide a buffer. If that happens, allocate our own...
 	 */
