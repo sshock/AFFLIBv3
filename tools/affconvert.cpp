@@ -668,7 +668,7 @@ int main(int argc,char **argv)
 	char *cc = strrchr(outfile,'.'); // to strip off extension
 	if(cc){
 	    /* Found an extension; copy over mine. */
-	    strlcpy(cc+1,ext,sizeof(outfile)-(cc-outfile));
+	    strlcpy(cc+1,ext,sizeof(outfile)-(cc+1-outfile));
 	}
 	else {
 	    /* No extension; make one */
