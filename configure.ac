@@ -46,7 +46,6 @@ if test x"${cross_compiling}" = "xno" ; then
   AC_MSG_NOTICE([ LDFLAGS = ${LDFLAGS} ])
 else
   AC_MSG_NOTICE([Cross Compiling --- will not update CPPFALGS or LDFLAGS with /usr/local, /opt/local or /sw])
-  LIBS="$LIBS -lws2_32 -lgdi32"
 fi
 
 if test -r /bin/uname.exe ; then
@@ -180,12 +179,6 @@ AC_ARG_ENABLE([qemu])
 
 echo "disable_qemu: " ${disable_qemu}
 echo "enable_qemu:  " ${enable_qemu}
-
-if test x"${cross_compiling}" = "xyes" ; then
-  AC_MSG_NOTICE([cross-compiling: Disabling QEMU])
-  enable_qemu="no";
-fi
-
 
 if test "x${enable_qemu}" = "xno" ; then
    enable_qemu="no"
