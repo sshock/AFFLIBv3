@@ -78,7 +78,7 @@ void usage()
     printf("%s version %s\n\n",progname,PACKAGE_VERSION);
     printf("usage: %s [options] infile(s)\n",progname);
     printf("      -m = print all output in megabytes\n");
-    printf("      -v = Just print the version number and exit.\n");
+    printf("      -V = Just print the version number and exit.\n");
     exit(0);
 }
 
