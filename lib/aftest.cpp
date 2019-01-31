@@ -706,8 +706,8 @@ void zap(const char *fn)
 const char *fnames[] = {"foo.000","foo.001",
 			"foo.100","foo.101",
 			"bizmark.999","bizmark.A00",
-			"nutter.A99","nutter.AA0",
-			"bizmark.AZ9","bizmark.B00",
+			"nutter.A99","nutter.A9A",
+			"bizmark.AZZ","bizmark.B00",
 			"glutten.afj","glutten.afk",
 			0,0};
 
