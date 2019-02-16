@@ -691,8 +691,8 @@ int af_sig_verify_seg2(AFFILE *af,const char *segname,EVP_PKEY * /*pubkey*/,u_ch
     EVP_VerifyUpdate(md,(const unsigned char *)segname,strlen(segname)+1);
     EVP_VerifyUpdate(md,(const unsigned char *)&arg_net,sizeof(arg_net));
     EVP_VerifyUpdate(md,segbuf,seglen);
-    EVP_MD_CTX_free(md);
     int r = EVP_VerifyFinal(md,sigbuf,sigbuf_len,af->crypto->sign_pubkey);
+    EVP_MD_CTX_free(md);
     free(segbuf);
 
     if(r==1) return 0;			// verifies

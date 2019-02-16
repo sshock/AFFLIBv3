@@ -94,6 +94,7 @@ tools/affstats
 tools/affuse
 tools/affverify
 tools/affxml
+tools/rawevidence.raw
 
 lib/version.h
 *.lo
