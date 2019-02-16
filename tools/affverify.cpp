@@ -305,7 +305,7 @@ int crypto_verify(AFFILE *af,u_char *certbuf,size_t certbuf_len)
 	if(parse_chain(seg->name)>=0) continue; // chain of custody segments don't need signatures
 	
 	const char *segname = seg->name.c_str();
-	int i =af_sig_verify_seg(af,segname);
+	int i = af_sig_verify_seg(af,segname);
 	if(opt_verbose){
 	    printf("af_sig_verify_seg(af,%s)=%d\n",segname,i);
 	}
@@ -434,7 +434,7 @@ int hash_verify(AFFILE *af)
     unsigned char md5_buf[16];
     char hexbuf[256];
     size_t sha1_len = sizeof(sha1_buf);
-    size_t md5_len  =sizeof(md5_buf);
+    size_t md5_len = sizeof(md5_buf);
     const EVP_MD *md5_evp = 0;
     const EVP_MD *sha1_evp = 0;
     EVP_MD_CTX *md5 = EVP_MD_CTX_new();

@@ -12,7 +12,6 @@ AGENT_PEM=$BASE.agent.pem
 ANALYST_PEM=$BASE.analyst.pem
 ARCHIVES_PEM=$BASE.archives.pem
 EVIDENCE=$BASE.evidence.aff
-EVIDENCE1=$BASE.evidence1.aff
 EVIDENCE2=$BASE.evidence2.aff
 EVIDENCE3=$BASE.evidence3.aff
 
@@ -33,17 +32,11 @@ echo ==== AFSIGN TEST ===
 echo Making X.509 keys
 
 openssl req -x509 -newkey rsa:1024 -keyout $AGENT_PEM -out $AGENT_PEM -nodes -subj "/C=US/ST=California/L=Remote/O=Country Govt./OU=Sherif Dept/CN=Mr. Agent/emailAddress=agent@investiations.com"
-
- openssl req -x509 -newkey rsa:1024 -keyout $ANALYST_PEM -out $ANALYST_PEM -nodes -subj "/C=US/ST=California/L=Remote/O=State Police/OU=Forensics/CN=Ms. Analyst/emailAddress=analyst@investiations.com"
+openssl req -x509 -newkey rsa:1024 -keyout $ANALYST_PEM -out $ANALYST_PEM -nodes -subj "/C=US/ST=California/L=Remote/O=State Police/OU=Forensics/CN=Ms. Analyst/emailAddress=analyst@investiations.com"
 openssl req -x509 -newkey rsa:1024 -keyout $ARCHIVES_PEM -out $ARCHIVES_PEM -nodes -subj "/C=US/ST=CA/L=Remote/O=Archives/OU=Electronic/CN=Dr. Librarian/emailAddress=drbits@investiations.com"
 
 echo Making an AFF file to sign
-rm -f $EVIDENCE evidence?.aff
 ls -l rawevidence.raw
-# echo affconvert -o $EVIDENCE rawevidence.raw 
-# pwd
-# which affconvert
-# affconvert -o junk.aff rawevidence.raw
 affconvert -o $EVIDENCE rawevidence.raw 
 echo Initial AFF file made:
 ls -l $EVIDENCE
