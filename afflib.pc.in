@@ -7,5 +7,5 @@ Name: afflib
 Description: Library to support the Advanced Forensic Format
 Version: @VERSION@
 Requires: openssl
-Libs: -L${libdir} -lafflib -lstdc++
+Libs: -L${libdir} -lafflib
 Cflags: -I${includedir}
