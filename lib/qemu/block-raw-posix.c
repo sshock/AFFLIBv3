@@ -636,10 +636,10 @@ static int hdev_open(BlockDriverState *bs, const char *filename, int flags)
     int fd, open_flags, ret;
 
 #ifdef CONFIG_COCOA
+    char bsdPath[ MAXPATHLEN ];
     if (strstart(filename, "/dev/cdrom", NULL)) {
         kern_return_t kernResult;
         io_iterator_t mediaIterator;
-        char bsdPath[ MAXPATHLEN ];
         int fd;
 
         kernResult = FindEjectableCDMedia( &mediaIterator );

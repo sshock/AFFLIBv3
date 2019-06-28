@@ -806,6 +806,7 @@ int af_update_segf(AFFILE *af, const char *segname,
 #ifdef HAVE_AES_ENCRYPT
     const char *oldname = 0;
     unsigned char *newdata = 0;
+    char aesname[AF_MAX_NAME_LEN];
     if(AF_SEALING(af) && ((flag & AF_SIGFLAG_NOSEAL)==0) && af->crypto->auto_encrypt){
 	/* Create an IV */
 	unsigned char iv[AES_BLOCK_SIZE];
@@ -813,7 +814,6 @@ int af_update_segf(AFFILE *af, const char *segname,
 	strlcpy((char *)iv,segname,sizeof(iv));
 
 	/* Figure out the real segment name */
-	char aesname[AF_MAX_NAME_LEN];
 	strlcpy(aesname,segname,sizeof(aesname));
 	strlcat(aesname,AF_AES256_SUFFIX,sizeof(aesname));
 	oldname = segname;
