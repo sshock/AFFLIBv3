@@ -423,7 +423,7 @@ void sparse_test()
     if(r!=0) errx(1,"Tried to read past end of file; got %zd bytes (should get 0)",r);
 
     af_close(af);
-    printf("\nSprase test passes.\n");
+    printf("\nSparse test passes.\n");
     printf("=====================\n\n");
 }
 
