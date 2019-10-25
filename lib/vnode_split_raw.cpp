@@ -205,6 +205,7 @@ static int split_raw_open_internal(AFFILE *af, uint64_t *image_size)
     if (fstat (fd, &sb) != 0) {
       (*af->error_reporter)("split_raw_open_internal: fstat(%s): ",af->fname);
 	close (fd);
+	srp->fds[0] = 0;
 	return -1;
     }
 
