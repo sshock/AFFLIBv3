@@ -241,7 +241,7 @@ int af_get_page(AFFILE *af,int64_t pagenum,unsigned char *data,size_t *bytes)
 		break;
 	    }
 	    memset(data,0,af->image_pagesize);
-	    *bytes = ntohl(*(long *)compressed_data);
+	    *bytes = ntohl(*(uint32_t *)compressed_data);
 	    res = 0;			// not very hard to decompress with the ZERO compressor.
 	    break;
 
@@ -295,6 +295,11 @@ int af_get_page(AFFILE *af,int64_t pagenum,unsigned char *data,size_t *bytes)
 	free(compressed_data);		// don't need this one anymore
 	af->pages_decompressed++;
 	if(res!=Z_OK) return -1;
+    }
+
+    /* Sanity check */
+    if(bytes && *bytes > af->image_pagesize){
+	*bytes = af->image_pagesize;
     }
 
     /* If the page size is larger than the sector_size,
