@@ -361,7 +361,8 @@ AFFILE *af_open(const char *filename,int flags,int mode)
 	return 0;
     }
 
-    if(flags & O_WRONLY){
+    /* Note on Hurd O_RDWR == O_WRONLY|O_RDONLY, hence the need to check that as well */
+    if((flags & O_WRONLY) && !(flags & O_RDWR)){
 	errno = EINVAL;
 	return 0;			// this flag not supported
     }
