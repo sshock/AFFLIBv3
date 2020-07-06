@@ -159,7 +159,7 @@ int random_write_test()
     char *tally = (char *)calloc(MAX_FMTS,1);
     int i;
 
-    memset(tally,0,sizeof(tally));
+    memset(tally,0,MAX_FMTS);
 
     /* Create the AFF file */
     sprintf(buf,fmt,0);		// figure out how big fmt string is
@@ -510,7 +510,7 @@ void lzma_test()
 
 void make_test_seg(u_char buf[1024],int num)
 {
-    memset(buf,0,sizeof(buf));
+    memset(buf,0,1024);
     sprintf((char *)buf,"This test %d. This is just a test. Stop thinking.\n",num);
 }
 
