@@ -255,7 +255,7 @@ int random_read_test(int total_bytes,int data_page_size)
 	memset(buf,0,total_bytes);
 	memset(buf2,0,total_bytes);
 
-	if(i%250==0) printf("\r#%d  reading %"PRIu32" bytes at %"PRIu32"    ...",i,loc,len);
+	if(i%250==0) printf("\r#%d  reading %" PRIu32 " bytes at %" PRIu32 "    ...",i,loc,len);
 	fflush(stdout);
 
 	uint32_t l1 = (uint32_t)lseek(fd,loc,SEEK_SET);
@@ -263,7 +263,7 @@ int random_read_test(int total_bytes,int data_page_size)
 
 
 	if(l1!=l2){
-	    err(1,"l1 (%"PRIu32") != l2 (%"PRIu32")",l1,l2);
+	    err(1,"l1 (%" PRIu32 ") != l2 (%" PRIu32 ")",l1,l2);
 	}
 
 	int r1 = read(fd,buf,len);
@@ -286,7 +286,7 @@ void large_file_test()
     int64_t i;
     char fn[1024];
 
-    printf("Large file test... Creating a %"I64d"MB file...\n",pagesize*num_segments/(1024*1024));
+    printf("Large file test... Creating a %" I64d "MB file...\n",pagesize*num_segments/(1024*1024));
     filename(fn,sizeof(fn),"large_file");
     AFFILE *af = af_open(fn,O_CREAT|O_RDWR|O_TRUNC,0666);
 
@@ -298,10 +298,10 @@ void large_file_test()
     af_set_maxsize(af,(int64_t)pagesize * 600);
 
     for(i=0;i<num_segments;i++){
-	sprintf((char *)buf,"%"I64d" page is put here",i);
-	if(i%25==0) printf("\rWriting page %"I64d"\r",i);
+	sprintf((char *)buf,"%" I64d " page is put here",i);
+	if(i%25==0) printf("\rWriting page %" I64d "\r",i);
 	if(af_write(af,buf,pagesize)!=pagesize){
-	    err(1,"Can't write page %"I64d,i);
+	    err(1,"Can't write page %" I64d,i);
 	}
     }
     printf("\n\n");
@@ -314,9 +314,9 @@ void large_file_test()
 	    err(1,"Tried to read 1024 bytes; got %d\n",r);
 	}
 	if(atoi((char *)buf)!=i){
-	    err(1,"at page %"I64d", expected %"I64d", got %s\n",i,i,buf);
+	    err(1,"at page %" I64d ", expected %" I64d ", got %s\n",i,i,buf);
 	}
-	printf("Page %"I64d" validates\n",i);
+	printf("Page %" I64d " validates\n",i);
     }
 
     af_close(af);
@@ -339,7 +339,7 @@ void maxsize_test()
     AFFILE *af = af_open(filename(fn,sizeof(fn),"maxsize"),O_CREAT|O_RDWR|O_TRUNC,0666);
     memset(buf,0,sizeof(buf));
     for(int64_t i=0;i<numpages;i++){
-	sprintf(buf,"This is page %"I64d". ****************************************************\n",i);
+	sprintf(buf,"This is page %" I64d ". ****************************************************\n",i);
 	sprintf(segname,AF_PAGE,i);
 	af_update_seg(af,segname,0,buf,sizeof(buf));
     }
@@ -366,7 +366,7 @@ void sparse_test()
     for(u_int i=0;i<10;i++){
 	uint64_t pos = mult*i;
 	memset(buf,0,sizeof(buf));
-	snprintf(buf,sizeof(buf),"This is at location=%"I64u"\n",pos);
+	snprintf(buf,sizeof(buf),"This is at location=%" I64u "\n",pos);
 	af_seek(af,pos,SEEK_SET);
 	af_write(af,(unsigned char *)buf,sizeof(buf));
     }
@@ -379,15 +379,15 @@ void sparse_test()
 	af_read(af,(unsigned char *)buf,sizeof(buf));
 	char *cc = strchr(buf,'=');
 	if(!cc){
-	    printf("Garbage read at location %"I64u"\n.",pos);
+	    printf("Garbage read at location %" I64u "\n.",pos);
 	    exit(1);
 	}
-	if(sscanf(cc+1,"%"I64u,&q)!=1){
-	    printf("Could not decode value at location %"I64u"(%s)\n",pos,cc+1);
+	if(sscanf(cc+1,"%" I64u,&q)!=1){
+	    printf("Could not decode value at location %" I64u "(%s)\n",pos,cc+1);
 	    exit(1);
 	}
 	if(pos!=q){
-	    printf("Wrong value at location %"I64u"; read %"I64u" in error.\n", pos,q);
+	    printf("Wrong value at location %" I64u "; read %" I64u " in error.\n", pos,q);
 	    exit(1);
 	}
     }
@@ -437,8 +437,8 @@ void figure(const char *fn)
 	err(1,"af_figure_media");
     }
     printf("sector size: %d\n",afb.sector_size);
-    printf("total sectors: %"PRId64"\n",afb.total_sectors);
-    printf("max read blocks: %"PRId64"\n",afb.max_read_blocks);
+    printf("total sectors: %" PRId64 "\n",afb.total_sectors);
+    printf("max read blocks: %" PRId64 "\n",afb.max_read_blocks);
     exit(0);
 }
 
@@ -681,7 +681,7 @@ void readfile_test(const char *fname)
 	err(1,"af_open(%s)",fname);
     }
     printf("using '%s'\n",af->v->name);
-    printf("af_get_imagesize()=%"PRId64" errno=%d\n",af_get_imagesize(af),errno);
+    printf("af_get_imagesize()=%" PRId64 " errno=%d\n",af_get_imagesize(af),errno);
 
     int r = af_read(af,buf,sizeof(buf));
     printf("af_read(af,buf,1024)=%d  errno=%d\n",r,errno);
@@ -900,7 +900,7 @@ int split_raw_test(const char *fn)
     void srp_dump(AFFILE *af);
     AFFILE *af = af_open(fn,O_RDONLY,0666);
     if(!af) err(1,"af_open:%s",fn);
-    printf("split_raw imagesize: %"PRId64"\n",af_get_imagesize(af));
+    printf("split_raw imagesize: %" PRId64 "\n",af_get_imagesize(af));
     srp_dump(af);
     af_close(af);
     return 0;
