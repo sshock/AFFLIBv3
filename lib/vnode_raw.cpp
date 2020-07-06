@@ -56,7 +56,8 @@ static int raw_open(AFFILE *af)
     if(fd < 0)
         return -1;
 
-    FILE *file = fdopen(fd, (af->openflags & (O_RDWR | O_WRONLY)) ? "r+b" : "rb");
+    int accmode = (af->openflags & O_ACCMODE);
+    FILE *file = fdopen(fd, (accmode == O_RDWR || accmode == O_WRONLY) ? "r+b" : "rb");
     if(!file)
     {
         close(fd);
