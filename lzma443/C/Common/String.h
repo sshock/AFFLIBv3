@@ -431,9 +431,10 @@ public:
   CStringBase GetTrimDefaultCharSet()
   {
     CStringBase<T> charSet;
-    for(int i = 0; i < (int)(sizeof(kTrimDefaultCharSet) /
-      sizeof(kTrimDefaultCharSet[0])); i++)
+    for(int i = 0; kTrimDefaultCharSet[i] != 0; i++)
+    {
       charSet += (T)kTrimDefaultCharSet[i];
+    }
     return charSet;
   }
   public:
