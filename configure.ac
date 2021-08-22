@@ -75,15 +75,6 @@ AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_STRUCT_TM
 AC_STRUCT_ST_BLOCKS
-AC_DIAGNOSE([obsolete],[your code should no longer depend upon `HAVE_ST_RDEV', but
-`HAVE_STRUCT_STAT_ST_RDEV'.  Remove this warning and
-the `AC_DEFINE' when you adjust the code.])dnl
-AC_CHECK_MEMBERS([struct stat.st_rdev],[AC_DEFINE(HAVE_ST_RDEV, 1,
-			    [Define to 1 if your `struct stat' has `st_rdev'.
-			     Deprecated, use `HAVE_STRUCT_STAT_ST_RDEV'
-			     instead.])])
-
-
 
 # Specific headers that I plan to use
 AC_CHECK_HEADERS([arpa/inet.h assert.h ctype.h dmalloc.h err.h errno.h fcntl.h getopt.h inttypes.h linux/fs.h malloc.h netinet/in.h regex.h signal.h stdint.h stdio.h stdlib.h string.h sys/cdefs.h sys/disk.h sys/file.h sys/ioctl.h sys/ioctl.h sys/param.h sys/param.h sys/socket.h sys/signal.h sys/stat.h sys/time.h sys/types.h sys/vfs.h sysexits.h time.h unistd.h zlib.h _mingw.h])
