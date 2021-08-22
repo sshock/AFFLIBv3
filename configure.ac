@@ -23,7 +23,7 @@ AC_PROG_INSTALL
 
 # Turn off shared libraries during beta-testing, since they
 # make the build process take too long.
-AC_PROG_LIBTOOL
+LT_INIT
 AC_CONFIG_MACRO_DIR([m4])
 
 # We are now threading
@@ -75,7 +75,14 @@ AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_STRUCT_TM
 AC_STRUCT_ST_BLOCKS
-AC_STRUCT_ST_RDEV
+AC_DIAGNOSE([obsolete],[your code should no longer depend upon `HAVE_ST_RDEV', but
+`HAVE_STRUCT_STAT_ST_RDEV'.  Remove this warning and
+the `AC_DEFINE' when you adjust the code.])dnl
+AC_CHECK_MEMBERS([struct stat.st_rdev],[AC_DEFINE(HAVE_ST_RDEV, 1,
+			    [Define to 1 if your `struct stat' has `st_rdev'.
+			     Deprecated, use `HAVE_STRUCT_STAT_ST_RDEV'
+			     instead.])])
+
 
 
 # Specific headers that I plan to use
@@ -97,7 +104,7 @@ AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
 AC_CHECK_FUNCS([getprogname strlcpy strlcat err_set_exit srandom srandomdev flock fstatfs valloc isdigit isalnum isalphanum isatty popen ftruncate memset mkdir putenv regcomp srandomdev strcasecmp strchr strdup strerror strrchr err errx warn warnx utimes unsetenv])
 
 # Special features that can be enabled or disabled
-AC_ARG_WITH([noopt], AC_HELP_STRING([--with-noopt],[Drop -O C flags]))
+AC_ARG_WITH([noopt], AS_HELP_STRING([--with-noopt],[Drop -O C flags]))
 
 # C++ headers
 AC_PROG_CXX
@@ -153,7 +160,7 @@ AS_IF([test "x$with_curl" != xno],
 ## Amazon S3
 ## S3 requires curl and expat; otherwise we don't need them
 AC_ARG_ENABLE([s3],
-  AC_HELP_STRING([--enable-s3], [Support for Amazon S3 service. Requires CURL and Expat. @<:@default=check@:>@]),
+  AS_HELP_STRING([--enable-s3],[Support for Amazon S3 service. Requires CURL and Expat. @<:@default=check@:>@]),
     [enable_s3=$enableval], [enable_s3=check])
 
 AS_IF([test "x$enable_s3" != xno],
@@ -195,7 +202,7 @@ AM_CONDITIONAL([MAYBE_QEMU],[test "x${enable_qemu}" = "xyes"])  # used by automa
 ################################################################
 # python checks
 AC_ARG_ENABLE([python],
-	AC_HELP_STRING([--enable-python=no], [Build python bindings (pyaff)]),
+	AS_HELP_STRING([--enable-python=no],[Build python bindings (pyaff)]),
         [enable_python=$enableval], [enable_python=no])
 if test "${enable_python}" = "yes" ; then
   AM_PATH_PYTHON()
@@ -229,7 +236,7 @@ AC_CHECK_FUNCS([PEM_read_bio_RSA_PUBKEY])
 ################################################################
 ## FUSE: Filesystem in Userspace
 AC_ARG_ENABLE(fuse,
-  AC_HELP_STRING([--enable-fuse], [Support for FUSE, Filesystem in Userspace. @<:@default=check@:>@]),
+  AS_HELP_STRING([--enable-fuse],[Support for FUSE, Filesystem in Userspace. @<:@default=check@:>@]),
     [enable_fuse=$enableval], [enable_fuse=check])
 
 have_fuse=no
@@ -308,8 +315,9 @@ AC_MSG_NOTICE([LDFLAGS:    ${LDFLAGS}])
 AC_MSG_NOTICE([*****************************************])
 AC_MSG_NOTICE([])
 
-# AC_PROG_RANLIB not needed if you are using AC_PROG_LIBTOOL
+# AC_PROG_RANLIB not needed if you are using LT_INIT
 # AC_PROG_RANLIB
-AC_OUTPUT([afflib.pc])
+AC_CONFIG_FILES([afflib.pc])
+AC_OUTPUT
 
 
