@@ -139,8 +139,7 @@ void s3_ls(FILE *out,const char *prefix,cvector *cv)
 	delete e;
     } while(isTruncated);
 
-    char buf[64];
-    if(out) fprintf(out,"Total: %"PRId64"\n",total);
+    if(out) fprintf(out,"Total: %" PRId64 "\n",total);
 }
 
 void s3_cat(int argc, char **argv)
@@ -197,7 +196,7 @@ void s3_delp(int argc,char **argv)
     s3_ls(f,*argv,&cv);
     if(cv.size()==0) errx(0,"No items to delete");
     printf("Really delete %d item%s?\n",cv.size(),cv.size()==1 ? "" : "s");
-    fgets(line,sizeof(line),stdin);
+    if(fgets(line,sizeof(line),stdin)==NULL) errx(1,"fgets failed");
     if(line[0]!='y' && line[0]!='Y') errx(1,"Aborted");
     for(cvector::iterator i=cv.begin();
 	i!=cv.end();
@@ -374,7 +373,7 @@ void s3_bandwidth(int argc,char **argv)
     char base[1024];
     char randp[1024];
     snprintf(base,sizeof(base),"%s.%d",BANDWIDTH_PREFIX,size);
-    snprintf(randp,sizeof(randp),"%s.%d.%d",BANDWIDTH_PREFIX,size,random() % 1000);
+    snprintf(randp,sizeof(randp),"%s.%d.%d",BANDWIDTH_PREFIX,size,(int)(random() % 1000));
 
 
     aftimer twrite;
@@ -470,9 +469,8 @@ void s3_bandwidth(int argc,char **argv)
 
 int main(int argc,char **argv)
 {
-    int bflag, ch;
+    int ch;
 
-    bflag = 0;
     opt_bucket = getenv(S3_DEFAULT_BUCKET);
     while ((ch = getopt(argc, argv, "b:dVh?f:mc:O:u:o:vt:")) != -1) {
 	switch (ch) {
