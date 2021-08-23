@@ -27,8 +27,8 @@ LT_INIT
 AC_CONFIG_MACRO_DIR([m4])
 
 # We are now threading
-m4_include([m4/acx_pthread.m4])
-ACX_PTHREAD()
+m4_include([m4/ax_pthread.m4])
+AX_PTHREAD()
 
 if test x"${cross_compiling}" = "xno" ; then
   # Bring additional directories where things might be found into our
