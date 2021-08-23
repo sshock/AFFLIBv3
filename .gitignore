@@ -105,6 +105,7 @@ affconfig.h
 *.trs
 *.dirstamp
 lib/aftest
+lib/s3
 afflib-?.?.?
 compile
 
