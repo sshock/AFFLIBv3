@@ -291,7 +291,7 @@ static int aff_get_next_seg(AFFILE *af,char *segname,size_t segname_len,uint32_t
     memset(&segt,0,sizeof(segt));	// zero before reading
     if(fread(&segt,sizeof(segt),1,af->aseg)!=1){
 	snprintf(af->error_str,sizeof(af->error_str),
-		 "af_get_next_segv: end of file reading segment tail; AFF file is truncated (AF_ERROR_TAIL)");
+		 "af_get_next_segv: AFF file is truncated (AF_ERROR_TAIL)");
 	return AF_ERROR_TAIL;
     }
     /* Validate tail */
@@ -302,12 +302,12 @@ static int aff_get_next_seg(AFFILE *af,char *segname,size_t segname_len,uint32_t
 	+ data_len + sizeof(struct af_segment_tail);
 
     if(strcmp(segt.magic,AF_SEGTAIL)!=0){
-	snprintf(af->error_str,sizeof(af->error_str),"af_get_next_segv: AF file is truncated (AF_ERROR_TAIL).");
+	snprintf(af->error_str,sizeof(af->error_str),"af_get_next_segv: AFF file is truncated (AF_ERROR_TAIL).");
 	fseeko(af->aseg,start,SEEK_SET); // go back to last good position
 	return AF_ERROR_TAIL;
     }
     if(stl != calculated_segment_len){
-	snprintf(af->error_str,sizeof(af->error_str),"af_get_next_segv: AF file corrupt (%" PRIu32 "!=%" PRIu32 ")/!",
+	snprintf(af->error_str,sizeof(af->error_str),"af_get_next_segv: AFF file corrupt (%" PRIu32 "!=%" PRIu32 ")/!",
 		 stl,calculated_segment_len);
 	fseeko(af->aseg,start,SEEK_SET); // go back to last good position
 	return AF_ERROR_TAIL;
