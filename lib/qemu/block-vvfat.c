@@ -416,13 +416,13 @@ static inline int short2long_name(char* dest,const char* src)
 {
     int i;
     int len;
-    for(i=0;i<129 && src[i];i++) {
+    for(i=0;i<128 && src[i];i++) {
         dest[2*i]=src[i];
 	dest[2*i+1]=0;
     }
     len=2*i;
     dest[2*i]=dest[2*i+1]=0;
-    for(i=2*i+2;(i%26);i++)
+    for(i=2*i+2;i<258 && (i%26);i++)
 	dest[i]=0xff;
     return len;
 }
@@ -630,7 +630,7 @@ static inline direntry_t* create_short_and_long_name(BDRVVVFATState* s,
 
     entry=array_get_next(&(s->directory));
     memset(entry->name,0x20,11);
-    strncpy((char*)entry->name,filename,i);
+    memcpy(entry->name,filename,i);
 
     if(j > 0)
 	for (i = 0; i < 3 && filename[j+1+i]; i++)
