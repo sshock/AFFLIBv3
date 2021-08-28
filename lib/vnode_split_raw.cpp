@@ -120,17 +120,15 @@ int split_raw_increment_fname (char *fn)
     /* See if it is a number */
     if(isdigit(ext[0]) && isdigit(ext[1]) && isdigit(ext[2])){
 	int num = atoi(ext);
-
-	/* Sanity check */
-	if(num<0 || num>999)
-	    return EINVAL;
-
 	if(num==999){
 	    strcpy(ext,"A00");
 	    return 0;
+	} else if(num >= 0 && num < 999) {
+	    snprintf(ext,4,"%03d",num+1);
+	    return 0;
+	} else {
+	    return EINVAL;
 	}
-	snprintf(ext,4,"%03d",num+1);
-	return 0;
     }
 
     /* First digit goes A-Z, second and third go 0-9A-Z */
