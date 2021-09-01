@@ -25,3 +25,8 @@ jobs:
            ./configure
            make
            sudo make install
+    - name: test
+      run: |
+           cd lib/
+           make aftest
+           ./aftest
