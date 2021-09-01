@@ -1,0 +1,2 @@
+version=4
+https://github.com/sshock/AFFLIBv3/releases .*/tags/v?(\d\S+)\.tar\.(?:bz2|gz|xz)

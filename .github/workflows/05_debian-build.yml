@@ -1,0 +1,40 @@
+name: debian-build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: check_if_run
+      run: |
+           egrep '^ ?RUN_DEBIAN=yes$' .github/workflows/run_debian ||
+               { echo "Build Debian is disabled."; export NORUN=1; }
+    - name: create_tarball
+      run: |
+           egrep '^ ?RUN_DEBIAN=yes$' .github/workflows/run_debian || exit 0
+           cd ..
+           tar --exclude=.git -cvzf afflib_0.1+testonly.orig.tar.gz AFFLIBv3
+    - name: create_debian_dir
+      run: |
+           egrep '^ ?RUN_DEBIAN=yes$' .github/workflows/run_debian || exit 0
+           cp -a .github/workflows/debian .
+    - name: install_dependencies
+      run: |
+           egrep '^ ?RUN_DEBIAN=yes$' .github/workflows/run_debian || exit 0
+           sudo apt install chrpath debhelper devscripts libcurl4-openssl-dev libexpat1-dev libfuse-dev libssl-dev lintian openssl zlib1g-dev
+    - name: set_lintian
+      run: |
+           egrep '^ ?RUN_DEBIAN=yes$' .github/workflows/run_debian || exit 0
+           cp .github/workflows/lintianrc ~/.lintianrc
+    - name: build
+      run: |
+           egrep '^ ?RUN_DEBIAN=yes$' .github/workflows/run_debian || exit 0
+           debuild --no-lintian --no-sign
+    - name: lintian_summarized
+      run: lintian
+    - name: lintian_explained
+      run: lintian -i

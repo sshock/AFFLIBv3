@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+#export DH_VERBOSE=1
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+export PVER=$(shell dpkg-parsechangelog --show-field version | cut -d"-" -f1)
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	dh_auto_configure -- --enable-s3=yes --enable-python=no \
+		--enable-static=yes --enable-shared=yes
+
+override_dh_auto_install:
+	dh_auto_install
+	chrpath -d debian/tmp/usr/bin/*
+
+override_dh_makeshlibs:
+	dh_makeshlibs -- -v$(PVER)

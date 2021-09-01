@@ -1,0 +1,2 @@
+afflib source: testsuite-autopkgtest-missing
+afflib source: debian-watch-does-not-check-gpg-signature

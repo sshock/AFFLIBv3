@@ -1,0 +1,4 @@
+display-info = yes
+pedantic = yes
+display-experimental = yes
+color = auto

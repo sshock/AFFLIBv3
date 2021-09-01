@@ -1,0 +1,100 @@
+Source: afflib
+Section: libs
+Priority: optional
+Maintainer: Debian Security Tools <team+pkg-security@tracker.debian.org>
+Uploaders: Joao Eriberto Mota Filho <eriberto@debian.org>
+Build-Depends: debhelper-compat (= 12),
+               chrpath,
+               libcurl4-openssl-dev,
+               libexpat1-dev,
+               libfuse-dev [!hurd-i386],
+               libssl-dev,
+               openssl,
+               zlib1g-dev
+Standards-Version: 4.5.0
+Rules-Requires-Root: no
+Homepage: https://github.com/sshock/AFFLIBv3
+Vcs-Browser: https://salsa.debian.org/pkg-security-team/afflib
+Vcs-Git: https://salsa.debian.org/pkg-security-team/afflib.git
+
+Package: libafflib0v5
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Conflicts: libafflib0
+Replaces: libafflib0
+Description: Advanced Forensics Format Library
+ The Advanced Forensic Format (AFF) is on-disk format for storing
+ computer forensic information. Critical features of AFF include:
+ .
+  - AFF allows you to store both computer forensic data and associated
+    metadata in one or more files.
+  - AFF allows files to be digital signed, to provide for
+    chain-of-custody and long-term file integrity.
+  - AFF allows for forensic disk images to stored encrypted and
+    decrypted on-the-fly for processing. This allows disk images
+    containing privacy sensitive material to be stored on the Internet.
+
+Package: libafflib-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends}, libafflib0v5 (= ${binary:Version})
+Recommends: afflib-tools
+Description: Advanced Forensics Format Library (development files)
+ The Advanced Forensic Format (AFF) is on-disk format for storing
+ computer forensic information. Critical features of AFF include:
+ .
+  - AFF allows you to store both computer forensic data and associated
+    metadata in one or more files.
+  - AFF allows files to be digital signed, to provide for
+    chain-of-custody and long-term file integrity.
+  - AFF allows for forensic disk images to stored encrypted and
+    decrypted on-the-fly for processing. This allows disk images
+    containing privacy sensitive material to be stored on the Internet.
+ .
+ This package provides the development files.
+
+Package: afflib-tools
+Section: utils
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Suggests: xmount
+Description: Advanced Forensics Format Library (utilities)
+ The Advanced Forensic Format (AFF) is on-disk format for storing
+ computer forensic information. Critical features of AFF include:
+ .
+  - AFF allows you to store both computer forensic data and associated
+    metadata in one or more files.
+  - AFF allows files to be digital signed, to provide for
+    chain-of-custody and long-term file integrity.
+  - AFF allows for forensic disk images to stored encrypted and
+    decrypted on-the-fly for processing. This allows disk images
+    containing privacy sensitive material to be stored on the Internet.
+ .
+ This package provides the AFF Toolkit, that is a set of programs for
+ working with computer forensic information. Using these tools you can:
+  * Interconvert disk images between a variety of formats, including:
+      - raw or "dd";
+      - splitraw (in which a single image is split between multiple files);
+      - AFF format (in which the entire disk image is stored in a single
+        file);
+      - AFD format (in which a disk image is stored in multiple AFF files
+        stored in a single directory);
+      - AFM format (in which an AFF file is used to annotate a raw file).
+  * Compare disk images and report the data or metadata that is different.
+  * Copy disk images from one location to another, with full verification
+    of data, metadata, and the automatic generation of a chain-of-custody
+    segment.
+  * Find errors in an AFF file and fix them.
+  * Print information about a file.
+  * Print detailed statistics about a file
+  * Generate a XML representation of a disk image's metadata (for example,
+    acquisition time or the serial number of the acquisition device).
+  * Produce a XML "diskprint" which allows a disk image to be rapidly
+    fingerprinted without having the computer the SHA1 of the entire
+    disk.
+ .
+ The AFF Toolkit provides these executables: affcat, affcompare, affconvert,
+ affcopy, affcrypto, affdiskprint, affinfo, affix, affrecover, affsegment,
+ affsign, affstats, affuse, affverify and affxml.
