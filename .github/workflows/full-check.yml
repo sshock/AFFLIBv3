@@ -1,0 +1,27 @@
+name: full-check
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: install_dependencies
+      run: sudo apt install chrpath libcurl4-openssl-dev libexpat1-dev libfuse-dev libssl-dev openssl zlib1g-dev
+    - name: first_build
+      run: |
+           ./bootstrap.sh
+           ./configure
+           make
+           sudo make install
+           sudo make uninstall
+           make distclean
+    - name: second_build
+      run: |
+           ./bootstrap.sh
+           ./configure
+           make
+           sudo make install
