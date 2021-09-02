@@ -1,0 +1,5 @@
+afflib (0.1+testonly-1) focal; urgency=medium
+
+  * Initial release. (Closes: #123456)
+
+ -- ABC <abc@xyz.example.org>  Sun, 15 Aug 2021 08:37:58 -0300
