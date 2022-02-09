@@ -572,9 +572,15 @@ static int aff_open(AFFILE *af)
 	return err_close(fd);
 
     /* Get file size */
-    struct stat sb;
-    if(fstat(fd, &sb) < 0)
+#ifdef _WIN32
+    struct _stat64 sb;
+    if(_fstat64(fd, &sb) < 0)
 	return err_close(af);
+#else
+    struct stat sb;
+    if (fstat(fd, &sb) < 0)
+        return err_close(af);
+#endif
 
     /* If file is empty, then put out an AFF header, badflag, and AFF version */
     if(canWrite && sb.st_size == 0)

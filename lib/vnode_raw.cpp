@@ -31,8 +31,13 @@ static int64_t raw_filesize(AFFILE *af)
 {
     struct raw_private *rp = RAW_PRIVATE(af);
 
+#ifdef _WIN32
+    struct _stat64 sb;
+    if (_fstat64(fileno(rp->raw), &sb) ==0) {
+#else
     struct stat sb;
     if(fstat(fileno(rp->raw),&sb)==0){
+#endif
 	if(sb.st_mode & S_IFREG){	// only do this for regular files
 	    return sb.st_size;
 	}
