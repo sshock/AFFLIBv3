@@ -193,7 +193,6 @@ static int split_raw_open_internal(AFFILE *af, uint64_t *image_size)
 {
     struct split_raw_private *srp = SPLIT_RAW_PRIVATE(af);
     int fd;
-    struct stat sb;
 
     fd = open(srp->first_raw_fname, af->openflags|O_BINARY, af->openmode);
     if (fd < 0) {
@@ -205,7 +204,13 @@ static int split_raw_open_internal(AFFILE *af, uint64_t *image_size)
     srp->fds = (int *)malloc (sizeof (int));
     srp->fds[0] = fd;
     srp->pos = (uint64_t *)malloc (sizeof (uint64_t));
+#ifdef _WIN32
+	struct _stat64 sb;
+	if (_fstat64(fd, &sb) != 0) {
+#else
+	struct stat sb;
     if (fstat (fd, &sb) != 0) {
+#endif
       (*af->error_reporter)("split_raw_open_internal: fstat(%s): ",af->fname);
 	close (fd);
 	srp->fds[0] = 0;
@@ -257,7 +262,11 @@ static int split_raw_open_internal(AFFILE *af, uint64_t *image_size)
 	   af_open returns.  */
 	if (!af->maxsize)
 	    af->maxsize = sb.st_size;
+#ifdef _WIN32
+	if (_fstat64(fd, &sb) != 0) {
+#else
 	if (fstat (fd, &sb) != 0) {
+#endif
 	  (*af->error_reporter)("split_raw_open_internal: fstat(%s): ",af->fname);
 	    return -1;
 	}
