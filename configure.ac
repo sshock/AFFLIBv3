@@ -4,7 +4,7 @@
 # See http://autotoolset.sourceforge.net/tutorial.html
 # and http://www.openismus.com/documents/linux/automake/automake.shtml
 
-AC_INIT([AFFLIB],[3.7.19],[https://github.com/sshock/AFFLIBv3])
+AC_INIT([AFFLIB],[3.7.20],[https://github.com/sshock/AFFLIBv3])
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
 
