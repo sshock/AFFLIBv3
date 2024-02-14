@@ -1478,7 +1478,7 @@ struct __pyx_obj_5pyaff_affile;
  */
 struct __pyx_obj_5pyaff_affile {
   PyObject_HEAD
-  struct AFFILE *af;
+  AFFILE *af;
   int64_t size;
 };
 

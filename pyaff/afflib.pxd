@@ -2,7 +2,8 @@ from libc.stdint cimport int64_t, uint32_t, uint64_t
 from posix.fcntl cimport O_RDONLY
 
 cdef extern from "afflib/afflib.h":
-    struct AFFILE
+    struct _AFFILE
+    ctypedef _AFFILE AFFILE
 
     enum: AF_MAX_NAME_LEN
 
