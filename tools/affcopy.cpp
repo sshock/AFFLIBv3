@@ -146,7 +146,7 @@ void unlink_outfiles(vector<string> outfiles)
     if(failure) exit(1);
 }
 
-#if !defined( __BSD_VISIBLE) && !defined(isnumber)
+#if (!defined(__BSD_VISIBLE) || defined(__CYGWIN__)) && !defined(isnumber)
 #define isnumber(x) isdigit(x)
 #endif
 
