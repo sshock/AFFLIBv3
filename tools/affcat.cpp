@@ -298,7 +298,7 @@ int main(int argc,char **argv)
     signal(SIGINFO,sig_info);
 #endif
 
-    while ((ch = getopt(argc, argv, "s:S:p:lLh?dqnvr:")) != -1) {
+    while ((ch = getopt(argc, argv, "s:S:p:lLh?dqnbvr:")) != -1) {
 	switch (ch) {
 	case 's':
 	    opt_segname = optarg;
