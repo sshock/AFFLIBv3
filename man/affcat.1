@@ -11,7 +11,7 @@ affcat \- Output contents of an image file to stdout.
 .B affcat
 outputs the contents of an image file to stdout.  Image files that are not raw but are recognized
 by AFF will be output in raw format. Missing pages will not be padded, but the fact that they are missing
-will be noted on STDERR.
+will be noted on STDERR if -n option is used.
 
 The options are as follows:
 .IP "-s name"
@@ -24,7 +24,7 @@ Just output data sector number
 .B nnn.
 Sector #0 is the first sector.
 .IP "-q" 
-Quiet mode. Don't print to STDERR if a page is skipped because it is not present.
+Quiet mode (default). Don't print to STDERR if a page is skipped because it is not present.
 .IP "-n"
 Noisy mode. Tell when pages are skipped.
 .IP "-l" 
