@@ -4,7 +4,7 @@
 
 	2005-2006 Basis Technology, Inc.
 	2005-2013 Simson L. Garfinkel <simsong@acm.org>
-	2014-2022 Phillip Hellewell <sshock@gmail.com>
+	2014-2025 Phillip Hellewell <sshock@gmail.com>
 
 The Advanced Forensic Format (AFF) is on-disk format for storing
 computer forensic information. Critical features of AFF include:
