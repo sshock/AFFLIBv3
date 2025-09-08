@@ -25,7 +25,7 @@ jobs:
     - name: install_dependencies
       run: |
            egrep '^ ?RUN_DEBIAN=yes$' .github/workflows/run_debian || exit 0
-           sudo apt install chrpath debhelper devscripts libcurl4-openssl-dev libexpat1-dev libfuse-dev libssl-dev lintian openssl zlib1g-dev
+           sudo apt install build-essential chrpath debhelper devscripts libcurl4-openssl-dev libexpat1-dev libfuse-dev libssl-dev lintian openssl zlib1g-dev
     - name: set_lintian
       run: |
            egrep '^ ?RUN_DEBIAN=yes$' .github/workflows/run_debian || exit 0
