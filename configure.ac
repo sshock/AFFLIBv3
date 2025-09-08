@@ -231,10 +231,10 @@ AC_ARG_ENABLE(fuse,
 
 have_fuse=no
 AS_IF([test "x$enable_fuse" != xno],
-  [CPPFLAGS="-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26 $CPPFLAGS"
-   AC_CHECK_HEADER([fuse.h],
-    [AC_CHECK_LIB([fuse], [fuse_version],
-      [FUSE_LIBS=-lfuse
+  [CPPFLAGS="-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=35 $CPPFLAGS"
+   AC_CHECK_HEADER([fuse3/fuse.h],
+    [AC_CHECK_LIB([fuse3], [fuse_version],
+      [FUSE_LIBS=-lfuse3
        have_fuse=yes])])
    AS_IF([test `uname -s` = Darwin && test "x$have_fuse" != "xyes"],
     [m4_ifdef([PKG_CHECK_MODULES],

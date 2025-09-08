@@ -28,7 +28,7 @@
 #define bool int
 #endif
 #include "afflib.h"
-#include <fuse.h>
+#include <fuse3/fuse.h>
 #include <fcntl.h>
 #include <libgen.h>
 
@@ -74,8 +74,10 @@ xstrdup(char *string)
 }
 
 static int
-affuse_getattr(const char *path, struct stat *stbuf)
+affuse_getattr(const char *path, struct stat *stbuf,
+               struct fuse_file_info *fi)
 {
+    (void) fi;
     int res = 0;
 
     memset(stbuf, 0, sizeof(struct stat));
@@ -96,17 +98,19 @@ affuse_getattr(const char *path, struct stat *stbuf)
 
 static int
 affuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-               off_t offset, struct fuse_file_info *fi)
+               off_t offset, struct fuse_file_info *fi,
+               enum fuse_readdir_flags flags)
 {
     (void) offset;
     (void) fi;
+    (void) flags;
 
     if(strcmp(path, "/") != 0)
         return -ENOENT;
 
-    filler(buf, ".", NULL, 0);
-    filler(buf, "..", NULL, 0);
-    filler(buf, raw_path + 1, NULL, 0);
+    filler(buf, ".", NULL, 0, 0);
+    filler(buf, "..", NULL, 0, 0);
+    filler(buf, raw_path + 1, NULL, 0, 0);
 
     return 0;
 }
@@ -170,7 +174,7 @@ usage(void)
     printf("Usage: affuse [<FUSE library options>] af_image mount_point\n");
     /* dirty, just to get current libfuse option list */
     fuse_main(2, cmdline, &affuse_oper, NULL);
-    printf("\nUse fusermount -u mount_point, to unmount\n");
+    printf("\nUse fusermount3 -u mount_point, to unmount\n");
 }
 
 int main(int argc, char **argv)
