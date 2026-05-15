@@ -100,10 +100,12 @@ LZMA_SOURCES =  \
 	@top_srcdir@/lzma443/C/7zip/Compress/LZ/LZInWindow.cpp \
 	@top_srcdir@/lzma443/C/7zip/Compress/LZ/LZOutWindow.cpp \
 	@top_srcdir@/lzma443/C/7zip/Compress/RangeCoder/RangeCoderBit.cpp \
+	@top_srcdir@/lzma443/C/7zip/Common/FileStreams.cpp \
 	@top_srcdir@/lzma443/C/7zip/Common/InBuffer.cpp \
 	@top_srcdir@/lzma443/C/7zip/Common/OutBuffer.cpp \
 	@top_srcdir@/lzma443/C/7zip/Common/StreamUtils.cpp \
 	@top_srcdir@/lzma443/C/Common/Alloc.cpp \
+	@top_srcdir@/lzma443/C/Common/C_FileIO.cpp \
 	@top_srcdir@/lzma443/C/Common/CommandLineParser.cpp \
 	@top_srcdir@/lzma443/C/Common/CRC.cpp \
 	@top_srcdir@/lzma443/C/Common/String.cpp \
