@@ -26,7 +26,7 @@
 #include <errno.h>
 
 #ifdef HAVE_OPENSSL_MD5_H
-#include <openssl/md5.h>
+#include <openssl/evp.h>
 #endif
 
 
@@ -450,7 +450,7 @@ void s3_bandwidth(int argc,char **argv)
     /* Now verify the MD5 */
     unsigned char md5[16];
     memset(md5,0,sizeof(md5));
-    MD5((const unsigned char *)r->base,r->len,md5);
+    af_MD5((const unsigned char *)r->base,r->len,md5);
     if(memcmp(r->ETag,md5,16)!=0){
 	fprintf(out," FAILED != ");
 	for(int i=0;i<16;i++) fprintf(out,"%02x",md5[i]);

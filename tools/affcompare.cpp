@@ -35,8 +35,6 @@ using namespace aff;
 #include <limits.h>
 #include <string.h>
 #include <zlib.h>
-#include <openssl/md5.h>
-#include <openssl/sha.h>
 #include <assert.h>
 
 #ifdef HAVE_CSTRING

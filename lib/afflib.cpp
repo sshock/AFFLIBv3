@@ -646,35 +646,49 @@ void af_aes_decrypt(AFFILE *af,const char *segname,unsigned char *data,size_t *d
     if(datalen==0) return;		// can't decrypt; no clue how long it is
 
     /* An encrypted segment was retrieved; decrypt and trunc the length as necessary */
-    uint32_t extra = (*datalen) % AES_BLOCK_SIZE;
-    uint32_t pad = (AES_BLOCK_SIZE - extra) % AES_BLOCK_SIZE;
+    uint32_t extra = (*datalen) % AFF_AES_BLOCK_SIZE;
+    uint32_t pad = (AFF_AES_BLOCK_SIZE - extra) % AFF_AES_BLOCK_SIZE;
 
     if(data==0){			// just wants to find out new length
 	if(extra>0){
-	    *datalen -= AES_BLOCK_SIZE;
+	    *datalen -= AFF_AES_BLOCK_SIZE;
 	}
 	return;
     }
 
-    if(extra!=0 && *datalen < AES_BLOCK_SIZE){
+    if(extra!=0 && *datalen < AFF_AES_BLOCK_SIZE){
 	*datalen = 0;			// something is wrong
 	return;
     }
 
     if(data==0){			// just report the new size
-	if(extra!=0) *datalen -= AES_BLOCK_SIZE; // a block was added
+	if(extra!=0) *datalen -= AFF_AES_BLOCK_SIZE; // a block was added
 	return;
     }
 
-    *datalen -= extra;	// *datalen is now a multiple of AES_BLOCK_SIZE
+    *datalen -= extra;	// *datalen is now a multiple of AFF_AES_BLOCK_SIZE
     /* Create an IV */
-    unsigned char iv[AES_BLOCK_SIZE];
+    unsigned char iv[AFF_AES_BLOCK_SIZE];
     memset(iv,0,sizeof(iv));
     strlcpy((char *)iv,segname,sizeof(iv));
 
-    /* Decrypt! */
+    /* Decrypt in place, using the stable EVP API (the legacy
+     * AES_cbc_encrypt is deprecated since OpenSSL 3.0 and hidden in
+     * no-deprecated OpenSSL 3.4+/4.0 builds). The EVP result is
+     * byte-identical to the legacy call for whole-block inputs.
+     */
     AF_READLOCK(af);
-    AES_cbc_encrypt(data,data,*datalen,&af->crypto->dkey,iv,AES_DECRYPT);
+    {
+        int outlen = 0;
+	if(EVP_DecryptInit_ex(af->crypto->dkey,NULL,NULL,NULL,iv)==1){	// re-init: same cipher+key, fresh IV
+	    outlen = 0;
+	    EVP_DecryptUpdate(af->crypto->dkey,data,&outlen,data,(int)*datalen);
+	    {
+		int flen = 0;
+		EVP_DecryptFinal_ex(af->crypto->dkey,data+outlen,&flen); // writes 0 bytes (no padding, whole blocks)
+	    }
+	}
+    }
     AF_UNLOCK(af);
     *datalen -= pad;	// remove the padding
 #endif
@@ -700,9 +714,9 @@ int af_get_seg(AFFILE *af,const char *segname,uint32_t *arg,unsigned char *data,
 	    af_aes_decrypt(af,segname,data,datalen);
 	    return 0;
 	}
-	if(r==AF_ERROR_DATASMALL && datalen && (*datalen % AES_BLOCK_SIZE != 0)){
+	if(r==AF_ERROR_DATASMALL && datalen && (*datalen % AFF_AES_BLOCK_SIZE != 0)){
 	    /* Not enough space was provided to decrypt, probably because this was blocked out */
-	    size_t bigger_data_len = datalen_orig + AES_BLOCK_SIZE;
+	    size_t bigger_data_len = datalen_orig + AFF_AES_BLOCK_SIZE;
 	    unsigned char *bigger_data = (unsigned char *)malloc(bigger_data_len);
 	    if(!bigger_data) return -1;	// Malloc failed
 	    r = (*af->v->get_seg)(af,aesname,arg,bigger_data,&bigger_data_len);
@@ -756,7 +770,7 @@ int af_get_next_seg(AFFILE *af,char *segname,size_t segname_len,uint32_t *arg,
 	    AF_UNLOCK(af);
 	    return 0;
 	}
-	if(r==AF_ERROR_DATASMALL && datalen && (*datalen % AES_BLOCK_SIZE !=0)){
+	if(r==AF_ERROR_DATASMALL && datalen && (*datalen % AFF_AES_BLOCK_SIZE !=0)){
 	    *datalen = datalen_orig;
 	    AF_UNLOCK(af);
 	    return af_get_seg(af,segname,arg,data,datalen);
@@ -810,7 +824,7 @@ int af_update_segf(AFFILE *af, const char *segname,
     char aesname[AF_MAX_NAME_LEN];
     if(AF_SEALING(af) && ((flag & AF_SIGFLAG_NOSEAL)==0) && af->crypto->auto_encrypt){
 	/* Create an IV */
-	unsigned char iv[AES_BLOCK_SIZE];
+	unsigned char iv[AFF_AES_BLOCK_SIZE];
 	memset(iv,0,sizeof(iv));
 	strlcpy((char *)iv,segname,sizeof(iv));
 
@@ -822,14 +836,29 @@ int af_update_segf(AFFILE *af, const char *segname,
 
 	/* Figure out if we need to padd out for encryption. Allocate space and
 	 */
-	uint32_t extra = (datalen) % AES_BLOCK_SIZE;
-	uint32_t pad = (AES_BLOCK_SIZE - extra) % AES_BLOCK_SIZE;
+	uint32_t extra = (datalen) % AFF_AES_BLOCK_SIZE;
+	uint32_t pad = (AFF_AES_BLOCK_SIZE - extra) % AFF_AES_BLOCK_SIZE;
 	newdata = (unsigned char *)malloc(datalen+pad+extra);
+	memcpy(newdata,(const unsigned char *)data,datalen);
 	memset(newdata+datalen,pad+extra,pad); // PKCS7 uses 01 for one pad byte, 02 02 for two, etc.
-	/* Encrypt */
-	AES_cbc_encrypt((const unsigned char *)data,
-			newdata,
-			datalen+pad,&af->crypto->ekey,iv,AES_ENCRYPT);
+	memset(newdata+datalen+pad,0,extra);	// zero the trailing alignment region
+	/* Encrypt, using the stable EVP API (the legacy AES_cbc_encrypt is
+	 * deprecated since OpenSSL 3.0 and hidden in no-deprecated OpenSSL
+	 * 3.4+/4.0 builds). Encrypting into a separate buffer also removes
+	 * the legacy in-place-style over-read of 'pad' bytes past the caller's
+	 * data buffer.
+	 */
+	{
+	    int ctlen = 0;
+	    if(EVP_EncryptInit_ex(af->crypto->ekey,NULL,NULL,NULL,iv)==1){	// re-init: same cipher+key, fresh IV
+		ctlen = 0;
+		EVP_EncryptUpdate(af->crypto->ekey,newdata,&ctlen,newdata,(int)(datalen+pad));
+		{
+		    int flen = 0;
+		    EVP_EncryptFinal_ex(af->crypto->ekey,newdata+ctlen,&flen); // writes 0 bytes (no padding, whole blocks)
+		}
+	    }
+	}
 	data = newdata;			// we will write this out
 	datalen += pad + extra;
     }

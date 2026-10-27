@@ -15,8 +15,6 @@
 #include <ctype.h>
 
 #include <zlib.h>
-#include <openssl/md5.h>
-#include <openssl/sha.h>
 #include <assert.h>
 
 #ifdef HAVE_UNISTD_H

@@ -30,6 +30,8 @@ AC_CONFIG_MACRO_DIR([m4])
 m4_include([m4/ax_pthread.m4])
 AX_PTHREAD()
 
+m4_include([m4/ax_openssl_version.m4])
+
 if test x"${cross_compiling}" = "xno" ; then
   # Bring additional directories where things might be found into our
   # search path. I don't know why autoconf doesn't do this by default
@@ -213,15 +215,36 @@ AM_CONDITIONAL(HAVE_PYTHON, test "$enable_python" = yes)
 ## Always check for headers, then libs, then functions
 ###
 
-AC_CHECK_HEADERS([openssl/aes.h openssl/bio.h openssl/evp.h openssl/hmac.h openssl/md5.h openssl/rand.h openssl/rsa.h openssl/sha.h openssl/pem.h openssl/x509.h])
+AC_CHECK_HEADERS([openssl/opensslv.h openssl/bio.h openssl/evp.h openssl/hmac.h openssl/rand.h openssl/rsa.h openssl/pem.h openssl/x509.h])
 
 AC_CHECK_LIB([crypto],[EVP_get_digestbyname],,
 	AC_MSG_ERROR([OpenSSL developer library 'libssl-dev' or 'openssl-devel' not installed; cannot continue.]))
 
 AC_CHECK_LIB([md],[MD5])		# if libmd is available, get it
 
-AC_CHECK_FUNCS([MD5 SHA1 AES_encrypt RAND_bytes des_read_pw_string EVP_read_pw_string EVP_MD_size])
 AC_CHECK_FUNCS([PEM_read_bio_RSA_PUBKEY])
+
+dnl Detect the OpenSSL version in use, and whether the deprecated low-level
+dnl MD5/SHA1/AES APIs are still visible in the installed headers.
+dnl Works with OpenSSL 1.0.2, 1.1.1, 3.x and 4.x.
+AX_OPENSSL_VERSION
+
+dnl The crypto code is written against the stable EVP API (EVP_MD_CTX,
+dnl EVP_CIPHER_CTX), which is identical on OpenSSL 1.0.2, 1.1.1, 3.x and 4.x.
+dnl Define HAVE_MD5 / HAVE_SHA1 / HAVE_AES_ENCRYPT -- previously derived from
+dnl the now-deprecated low-level MD5/SHA1/AES symbols -- from probes of the
+dnl EVP symbols instead. This keeps the build clean on OpenSSL 3.x and 4.x
+dnl (including no-deprecated builds) and working on OpenSSL 1.0.2/1.1.1.
+AC_CHECK_FUNCS([EVP_MD_CTX_new EVP_MD_CTX_free EVP_DigestInit_ex EVP_DigestUpdate EVP_DigestFinal_ex])
+AC_CHECK_FUNCS([EVP_CIPHER_CTX_new EVP_CIPHER_CTX_free EVP_EncryptInit_ex EVP_EncryptUpdate EVP_EncryptFinal_ex EVP_DecryptInit_ex EVP_DecryptUpdate EVP_DecryptFinal_ex EVP_CIPHER_CTX_set_padding])
+AC_CHECK_FUNCS([EVP_md5 EVP_sha1 EVP_sha256 EVP_aes_128_cbc EVP_aes_256_cbc EVP_aes_256_ecb RAND_bytes])
+
+AS_IF([test "$ac_cv_func_EVP_md5" = "yes" && test "$ac_cv_func_EVP_MD_CTX_new" = "yes"],
+	[AC_DEFINE([HAVE_MD5],1,[Define to 1 if OpenSSL provides MD5 through the EVP API])])
+AS_IF([test "$ac_cv_func_EVP_sha1" = "yes" && test "$ac_cv_func_EVP_MD_CTX_new" = "yes"],
+	[AC_DEFINE([HAVE_SHA1],1,[Define to 1 if OpenSSL provides SHA1 through the EVP API])])
+AS_IF([test "$ac_cv_func_EVP_aes_256_cbc" = "yes" && test "$ac_cv_func_EVP_CIPHER_CTX_new" = "yes"],
+	[AC_DEFINE([HAVE_AES_ENCRYPT],1,[Define to 1 if OpenSSL provides AES-256 through the EVP API])])
 
 ################################################################
 ## FUSE: Filesystem in Userspace
@@ -296,6 +319,7 @@ AC_MSG_NOTICE([PYTHON Bindings:    ${enable_python}])
 AC_MSG_NOTICE([QEMU Image Drivers: ${enable_qemu}])
 AC_MSG_NOTICE([FUSE:               ${enable_fuse}])
 AC_MSG_NOTICE([LIBEXPAT:           ${have_expat} (needed for AFF signatures)])
+AC_MSG_NOTICE([OpenSSL:            ${OPENSSL_VERSION} (EVP-based digest and cipher APIs)])
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([CFLAGS:     ${CFLAGS}])
 AC_MSG_NOTICE([CPPFLAGS:   ${CPPFLAGS}])

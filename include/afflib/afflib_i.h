@@ -105,11 +105,23 @@ void __cdecl AFDbgPrint (PCSTR Format,...);
 #endif
 
 #ifdef HAVE_LIBCRYPTO
-#include <openssl/aes.h>
+#include <openssl/evp.h>
 #include <openssl/rsa.h>		// a standard part of OpenSSL
 #include <openssl/rand.h>
-#include <openssl/md5.h>
-#include <openssl/sha.h>
+#include <openssl/x509.h>	// X509 is used by struct af_crypto
+/* The AES block size (16 bytes). Formerly taken from <openssl/aes.h>;
+ * that header is deprecated/removed in OpenSSL 3.x/4.x no-deprecated builds,
+ * so define it locally (AES blocks are always 16 bytes).
+ */
+#define AFF_AES_BLOCK_SIZE 16
+
+/* Support OpenSSL before 1.1.0 (renamed create/destroy to new/free) */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#define EVP_MD_CTX_new EVP_MD_CTX_create
+#define EVP_MD_CTX_free EVP_MD_CTX_destroy
+#define EVP_CIPHER_CTX_new EVP_CIPHER_CTX_create
+#define EVP_CIPHER_CTX_free EVP_CIPHER_CTX_destroy
+#endif
 #endif
 
 #ifdef HAVE_PTHREAD
@@ -432,9 +444,9 @@ struct af_crypto {
     uint32_t sealing_key_set:1;		// encryption key has been set
     uint32_t auto_encrypt:1;		// encrypt segments when we write
     uint32_t auto_decrypt:1;		// automatically decrypto when we read
-#ifdef AES_BLOCK_SIZE
-    AES_KEY	ekey;			// encrypt key
-    AES_KEY	dkey;			// decrypt key
+#ifdef HAVE_AES_ENCRYPT
+    EVP_CIPHER_CTX *ekey;		// EVP cipher context holding the encryption key (AES-256-CBC); NULL until set
+    EVP_CIPHER_CTX *dkey;		// EVP cipher context holding the decryption key (AES-256-CBC); NULL until set
 #endif
 #ifdef HAVE_OPENSSL_EVP_H
     EVP_PKEY	*sign_privkey;		// signing private key (to write signatures)

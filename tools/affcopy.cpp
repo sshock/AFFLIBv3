@@ -31,8 +31,7 @@ using namespace aff;
 
 #include <ctype.h>
 #include <zlib.h>
-#include <openssl/md5.h>
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 #include <assert.h>
 
 #ifdef HAVE_UNISTD_H
@@ -372,7 +371,7 @@ int affcopy(char *infile,vector<string> &outfiles)
 
 	/* Calculate the MD5 of this segment and remember it in the map */
 	md5blob md5;
-	MD5(segbuf,seglen,md5.buf);
+	af_MD5((const unsigned char *)segbuf,seglen,md5.buf);
 	hashMap[segname] = md5;
 
 	/* See if this is a page; if so, it is handled specially */
@@ -526,7 +525,7 @@ int affcopy(char *infile,vector<string> &outfiles)
 		 * (But don't do this for preened segments.
 		 */
 		unsigned char md5_read[16];
-		MD5(segbuf,seglen,md5_read);
+		af_MD5((const unsigned char *)segbuf,seglen,md5_read);
 		if(memcmp(hashMap[segname].buf,md5_read,16)!=0){
 		    unlink_outfiles(outfiles);
 		    errx(1,"Hash read from %s for segment %s doesn't validate.",

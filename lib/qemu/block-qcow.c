@@ -24,7 +24,7 @@
 #include "qemu-common.h"
 #include "block_int.h"
 #include <zlib.h>
-#include "aes.h"
+#include <openssl/evp.h>
 
 /**************************************************************/
 /* QEMU COW block driver with compression and encryption support */
@@ -71,8 +71,8 @@ typedef struct BDRVQcowState {
     uint64_t cluster_cache_offset;
     uint32_t crypt_method; /* current crypt method, 0 if no key yet */
     uint32_t crypt_method_header;
-    AES_KEY aes_encrypt_key;
-    AES_KEY aes_decrypt_key;
+    EVP_CIPHER_CTX *aes_encrypt_key;
+    EVP_CIPHER_CTX *aes_decrypt_key;
 } BDRVQcowState;
 
 static int decompress_cluster(BDRVQcowState *s, uint64_t cluster_offset);
@@ -189,50 +189,56 @@ static int qcow_set_key(BlockDriverState *bs, const char *key)
     }
     s->crypt_method = s->crypt_method_header;
 
-    if (AES_set_encrypt_key(keybuf, 128, &s->aes_encrypt_key) != 0)
+    /* Expand the key into EVP cipher contexts. (The legacy
+     * AES_set_encrypt_key/AES_set_decrypt_key calls are deprecated since
+     * OpenSSL 3.0 and hidden in no-deprecated OpenSSL 3.4+/4.0 builds;
+     * the EVP API performs the same key expansion.) */
+    EVP_CIPHER_CTX_free(s->aes_encrypt_key);
+    s->aes_encrypt_key = EVP_CIPHER_CTX_new();
+    EVP_CIPHER_CTX_free(s->aes_decrypt_key);
+    s->aes_decrypt_key = EVP_CIPHER_CTX_new();
+    if (!s->aes_encrypt_key || !s->aes_decrypt_key)
         return -1;
-    if (AES_set_decrypt_key(keybuf, 128, &s->aes_decrypt_key) != 0)
+    /* No padding: each sector is a multiple of the 16-byte block size */
+    EVP_CIPHER_CTX_set_padding(s->aes_encrypt_key, 0);
+    EVP_CIPHER_CTX_set_padding(s->aes_decrypt_key, 0);
+    if (EVP_EncryptInit_ex(s->aes_encrypt_key, EVP_aes_128_cbc(),
+                           NULL, keybuf, NULL) != 1 ||
+        EVP_DecryptInit_ex(s->aes_decrypt_key, EVP_aes_128_cbc(),
+                           NULL, keybuf, NULL) != 1)
         return -1;
-#if 0
-    /* test */
-    {
-        uint8_t in[16];
-        uint8_t out[16];
-        uint8_t tmp[16];
-        for(i=0;i<16;i++)
-            in[i] = i;
-        AES_encrypt(in, tmp, &s->aes_encrypt_key);
-        AES_decrypt(tmp, out, &s->aes_decrypt_key);
-        for(i = 0; i < 16; i++)
-            printf(" %02x", tmp[i]);
-        printf("\n");
-        for(i = 0; i < 16; i++)
-            printf(" %02x", out[i]);
-        printf("\n");
-    }
-#endif
     return 0;
 }
 
 /* The crypt function is compatible with the linux cryptoloop
    algorithm for < 4 GB images. NOTE: out_buf == in_buf is
-   supported */
+   supported.
+   'key' is the EVP_CIPHER_CTX created by qcow_set_key; 'enc' is 1 to
+   encrypt and 0 to decrypt (mirroring the legacy AES_ENCRYPT/AES_DECRYPT). */
 static void encrypt_sectors(BDRVQcowState *s, int64_t sector_num,
                             uint8_t *out_buf, const uint8_t *in_buf,
                             int nb_sectors, int enc,
-                            const AES_KEY *key)
+                            EVP_CIPHER_CTX *key)
 {
     union {
         uint64_t ll[2];
         uint8_t b[16];
     } ivec;
-    int i;
+    int i, len;
 
     for(i = 0; i < nb_sectors; i++) {
         ivec.ll[0] = cpu_to_le64(sector_num);
         ivec.ll[1] = 0;
-        AES_cbc_encrypt(in_buf, out_buf, 512, key,
-                        ivec.b, enc);
+        if (enc) {
+            /* re-init: same cipher and key, fresh per-sector IV */
+            EVP_EncryptInit_ex(key, NULL, NULL, NULL, ivec.b);
+            EVP_EncryptUpdate(key, out_buf, &len, in_buf, 512);
+        } else {
+            EVP_DecryptInit_ex(key, NULL, NULL, NULL, ivec.b);
+            EVP_DecryptUpdate(key, out_buf, &len, in_buf, 512);
+        }
+        /* 512 bytes is whole blocks and padding is off, so nothing is
+           pending and EVP_*Final would write 0 bytes. */
         sector_num++;
         in_buf += 512;
         out_buf += 512;
@@ -356,7 +362,7 @@ static uint64_t get_cluster_offset(BlockDriverState *bs,
                             encrypt_sectors(s, start_sect + i,
                                             s->cluster_data,
                                             s->cluster_data + 512, 1, 1,
-                                            &s->aes_encrypt_key);
+                                            s->aes_encrypt_key);
                             if (bdrv_pwrite(s->hd, cluster_offset + i * 512,
                                             s->cluster_data, 512) != 512)
                                 return -1;
@@ -476,7 +482,7 @@ static int qcow_read(BlockDriverState *bs, int64_t sector_num,
                 return -1;
             if (s->crypt_method) {
                 encrypt_sectors(s, sector_num, buf, buf, n, 0,
-                                &s->aes_decrypt_key);
+                                s->aes_decrypt_key);
             }
         }
         nb_sectors -= n;
@@ -506,7 +512,7 @@ static int qcow_write(BlockDriverState *bs, int64_t sector_num,
             return -1;
         if (s->crypt_method) {
             encrypt_sectors(s, sector_num, s->cluster_data, buf, n, 1,
-                            &s->aes_encrypt_key);
+                            s->aes_encrypt_key);
             ret = bdrv_pwrite(s->hd, cluster_offset + index_in_cluster * 512,
                               s->cluster_data, n * 512);
         } else {
@@ -558,7 +564,7 @@ static void qcow_aio_read_cb(void *opaque, int ret)
         if (s->crypt_method) {
             encrypt_sectors(s, acb->sector_num, acb->buf, acb->buf,
                             acb->n, 0,
-                            &s->aes_decrypt_key);
+                            s->aes_decrypt_key);
         }
     }
 
@@ -682,7 +688,7 @@ static void qcow_aio_write_cb(void *opaque, int ret)
             }
         }
         encrypt_sectors(s, acb->sector_num, acb->cluster_data, acb->buf,
-                        acb->n, 1, &s->aes_encrypt_key);
+                        acb->n, 1, s->aes_encrypt_key);
         src_buf = acb->cluster_data;
     } else {
         src_buf = acb->buf;
@@ -733,6 +739,10 @@ static void qcow_close(BlockDriverState *bs)
     qemu_free(s->cluster_cache);
     qemu_free(s->cluster_data);
     bdrv_delete(s->hd);
+    EVP_CIPHER_CTX_free(s->aes_encrypt_key);
+    s->aes_encrypt_key = NULL;
+    EVP_CIPHER_CTX_free(s->aes_decrypt_key);
+    s->aes_decrypt_key = NULL;
 }
 
 static int qcow_create(const char *filename, int64_t total_size,

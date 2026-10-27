@@ -336,6 +336,8 @@ int af_display_as_hex(const char *segname); // afflib recommends displaying this
 
 /* Crypto */
 /* AFF Base Encryption */
+int  af_MD5(const unsigned char *buf,size_t buflen,unsigned char md[16]); // return 0 if success, -1 if no cipher
+int  af_sha1(const unsigned char *buf,size_t buflen,unsigned char md[20]); // return 0 if success, -1 if no cipher
 int  af_SHA256(const unsigned char *buf,size_t buflen,unsigned char md[32]); // return 0 if success, -1 if no cipher
 int  af_set_aes_key(AFFILE *af,const unsigned char *userKey,const int bits);
 int  af_cannot_decrypt(AFFILE *af);	// encrypted pages are present which cannot be decrypted

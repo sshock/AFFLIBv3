@@ -25,11 +25,9 @@ using namespace std;
 #include <cstring>
 #endif
 
-/* Support OpenSSL before 1.1.0 */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-#define EVP_MD_CTX_new EVP_MD_CTX_create
-#define EVP_MD_CTX_free EVP_MD_CTX_destroy
-#endif
+/* Note: support for OpenSSL before 1.1.0 (EVP_MD_CTX_new/free and
+ * EVP_CIPHER_CTX_new/free aliases) is provided in include/afflib/afflib_i.h
+ */
 
 
 /****************************************************************
@@ -76,7 +74,57 @@ void af_crypto_allocate(AFFILE *af)
 }
 
 
-/** compute SHA256.
+/** compute MD5 using the stable EVP API (the one-shot MD5() function is
+ * deprecated since OpenSSL 3.0).
+ * Return 0 if success, -1 if error.
+ */
+int af_MD5(const unsigned char *data,size_t datalen,unsigned char md[16])
+{
+    const EVP_MD *md5 = EVP_get_digestbyname("MD5");
+    if(!md5) return -1;
+
+    uint32_t md5_buflen = 16;
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    if(!ctx) return -1;
+    if(EVP_DigestInit_ex(ctx,md5,NULL)!=1){
+        EVP_MD_CTX_free(ctx);
+        return -1;
+    }
+    EVP_DigestUpdate(ctx,data,datalen);
+    if(EVP_DigestFinal_ex(ctx,md,&md5_buflen)!=1){ // EVP_DigestFinal_ex returns 1 for success
+        EVP_MD_CTX_free(ctx);
+        return -1;
+    }
+    EVP_MD_CTX_free(ctx);
+    return 0;
+}
+
+/** compute SHA1 using the stable EVP API (the one-shot SHA1() function is
+ * deprecated since OpenSSL 3.0).
+ * Return 0 if success, -1 if error.
+ */
+int af_sha1(const unsigned char *data,size_t datalen,unsigned char md[20])
+{
+    const EVP_MD *sha1 = EVP_get_digestbyname("SHA1");
+    if(!sha1) return -1;
+
+    uint32_t sha1_buflen = 20;
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    if(!ctx) return -1;
+    if(EVP_DigestInit_ex(ctx,sha1,NULL)!=1){
+        EVP_MD_CTX_free(ctx);
+        return -1;
+    }
+    EVP_DigestUpdate(ctx,data,datalen);
+    if(EVP_DigestFinal_ex(ctx,md,&sha1_buflen)!=1){ // EVP_DigestFinal_ex returns 1 for success
+        EVP_MD_CTX_free(ctx);
+        return -1;
+    }
+    EVP_MD_CTX_free(ctx);
+    return 0;
+}
+
+/** compute SHA256 using the stable EVP API.
  * Return 0 if success, -1 if error.
  */
 int af_SHA256(const unsigned char *data,size_t datalen,unsigned char md[32])
@@ -86,11 +134,15 @@ int af_SHA256(const unsigned char *data,size_t datalen,unsigned char md[32])
 
     uint32_t sha256_buflen = 32;
     EVP_MD_CTX *ctx = EVP_MD_CTX_new();
-    EVP_DigestInit(ctx,sha256);
+    if(!ctx) return -1;
+    if(EVP_DigestInit_ex(ctx,sha256,NULL)!=1){
+        EVP_MD_CTX_free(ctx);
+        return -1;
+    }
     EVP_DigestUpdate(ctx,data,datalen);
-    if(EVP_DigestFinal(ctx,md,&sha256_buflen)!=1){ // EVP_DigestFinal returns 1 for success
-	EVP_MD_CTX_free(ctx);
-	return -1;
+    if(EVP_DigestFinal_ex(ctx,md,&sha256_buflen)!=1){ // EVP_DigestFinal_ex returns 1 for success
+        EVP_MD_CTX_free(ctx);
+        return -1;
     }
     EVP_MD_CTX_free(ctx);
     return 0;
@@ -98,9 +150,11 @@ int af_SHA256(const unsigned char *data,size_t datalen,unsigned char md[32])
 
 void af_crypto_deallocate(AFFILE *af)
 {
-#ifdef AES_BLOCK_SIZE
-    memset(&af->crypto->ekey,0,sizeof(af->crypto->ekey));
-    memset(&af->crypto->dkey,0,sizeof(af->crypto->dkey));
+#ifdef HAVE_AES_ENCRYPT
+    EVP_CIPHER_CTX_free(af->crypto->ekey);	// EVP_CIPHER_CTX_free(NULL) is a no-op
+    af->crypto->ekey = 0;
+    EVP_CIPHER_CTX_free(af->crypto->dkey);	// EVP_CIPHER_CTX_free(NULL) is a no-op
+    af->crypto->dkey = 0;
 #endif
 #ifdef HAVE_PEM_READ_BIO_RSA_PUBKEY
     if(af->crypto->sign_privkey){
@@ -131,12 +185,41 @@ int af_set_aes_key(AFFILE *af,const unsigned char *userKey,const int bits)
 	}
 	return AF_ERROR_KEY_SET;		// key is already set
     }
-    int r;
-    r = AES_set_encrypt_key(userKey,bits,&af->crypto->ekey);
-    if(r) return r;
 
-    r = AES_set_decrypt_key(userKey,bits,&af->crypto->dkey);
-    if(r) return r;
+    /* Set up the EVP cipher contexts. The legacy AES_set_encrypt_key/
+     * AES_set_decrypt_key calls are deprecated since OpenSSL 3.0 and
+     * hidden in no-deprecated OpenSSL 3.4+/4.0 builds, so we use the
+     * stable EVP API instead; it performs the same key expansion.
+     */
+    const unsigned char *key = userKey;
+    size_t keylen = (size_t)bits/8;
+    if(key==0 || (bits%8)!=0 || keylen<16 || keylen>32) return -1;	// invalid key length
+    const EVP_CIPHER *cipher =
+        (bits==128) ? EVP_aes_128_cbc() :
+        (bits==192) ? EVP_aes_192_cbc() :
+        (bits==256) ? EVP_aes_256_cbc() : 0;
+    if(!cipher) return -1;
+
+    EVP_CIPHER_CTX *ekey = EVP_CIPHER_CTX_new();
+    EVP_CIPHER_CTX *dkey = EVP_CIPHER_CTX_new();
+    if(!ekey || !dkey){
+        EVP_CIPHER_CTX_free(ekey);
+        EVP_CIPHER_CTX_free(dkey);
+        return -1;
+    }
+    if(EVP_EncryptInit_ex(ekey,cipher,NULL,key,NULL)!=1 ||	// NULL cipher keeps context intact; sets no IV yet
+       EVP_DecryptInit_ex(dkey,cipher,NULL,key,NULL)!=1){
+        EVP_CIPHER_CTX_free(ekey);
+        EVP_CIPHER_CTX_free(dkey);
+        return -1;
+    }
+    /* No padding: the AFF segment format adds and removes its own
+     * padding blocks, exactly like the legacy AES_*_encrypt path. */
+    EVP_CIPHER_CTX_set_padding(ekey,0);
+    EVP_CIPHER_CTX_set_padding(dkey,0);
+
+    af->crypto->ekey = ekey;
+    af->crypto->dkey = dkey;
 
     af->crypto->sealing_key_set = 1;
     af->crypto->auto_encrypt = 1;	// default
@@ -172,14 +255,31 @@ int af_save_aes_key_with_passphrase(AFFILE *af,const char *passphrase, const u_c
     memcpy(affkey_seg.version,(u_char *)&version_number,4);
     memcpy(affkey_seg.affkey_aes256,affkey,32);
 
-    /* Use the hash to encrypt the key and all zeros */
-    AES_KEY ekey;
-    AES_set_encrypt_key(passphrase_hash,256,&ekey);
-    AES_encrypt(affkey_seg.affkey_aes256,
-		affkey_seg.affkey_aes256,&ekey);
-    AES_encrypt(affkey_seg.affkey_aes256+AES_BLOCK_SIZE,
-		affkey_seg.affkey_aes256+AES_BLOCK_SIZE,&ekey);
-    AES_encrypt(affkey_seg.zeros_aes256,affkey_seg.zeros_aes256,&ekey);
+    /* Use the hash to encrypt the key and all zeros.
+     * (AES-256-ECB, three 16-byte blocks, via the stable EVP API --
+     * the legacy AES_set_encrypt_key/AES_encrypt are deprecated since
+     * OpenSSL 3.0. The result is byte-identical to the legacy code.)
+     */
+    EVP_CIPHER_CTX *ectx = EVP_CIPHER_CTX_new();
+    if(!ectx){
+        memset((unsigned char *)&affkey_seg,0,sizeof(affkey_seg)); // erase the temp data
+        return -1;
+    }
+    EVP_CIPHER_CTX_set_padding(ectx,0);	// exactly 16-byte blocks; no padding
+    int blen = 0, ok = 0;
+    if(EVP_EncryptInit_ex(ectx,EVP_aes_256_ecb(),NULL,passphrase_hash,NULL)==1){
+        ok =  EVP_EncryptUpdate(ectx,affkey_seg.affkey_aes256,&blen,
+                                affkey_seg.affkey_aes256,AFF_AES_BLOCK_SIZE)==1
+           && EVP_EncryptUpdate(ectx,affkey_seg.affkey_aes256+AFF_AES_BLOCK_SIZE,&blen,
+                                affkey_seg.affkey_aes256+AFF_AES_BLOCK_SIZE,AFF_AES_BLOCK_SIZE)==1
+           && EVP_EncryptUpdate(ectx,affkey_seg.zeros_aes256,&blen,
+                                affkey_seg.zeros_aes256,AFF_AES_BLOCK_SIZE)==1;
+    }
+    EVP_CIPHER_CTX_free(ectx);
+    if(!ok){
+        memset((unsigned char *)&affkey_seg,0,sizeof(affkey_seg)); // erase the temp data
+        return -1;
+    }
 
     /* Write this to a segment */
     if(af_update_seg(af,AF_AFFKEY,0,(const u_char *)&affkey_seg,sizeof(affkey_seg))) return -1;
@@ -253,15 +353,31 @@ int  af_get_aes_key_from_passphrase(AFFILE *af,const char *passphrase,
 	return AF_ERROR_NO_SHA256;
     }
 
-    /* Try to decrypt the key */
-
-    AES_KEY dkey;
-    AES_set_decrypt_key(passphrase_hash,256,&dkey);
-    AES_decrypt(affkey_seg.affkey_aes256,
-		affkey_seg.affkey_aes256,&dkey);
-    AES_decrypt(affkey_seg.affkey_aes256+AES_BLOCK_SIZE,
-		affkey_seg.affkey_aes256+AES_BLOCK_SIZE,&dkey);
-    AES_decrypt(affkey_seg.zeros_aes256,affkey_seg.zeros_aes256,&dkey);
+    /* Try to decrypt the key.
+     * (AES-256-ECB, three 16-byte blocks, via the stable EVP API --
+     * the legacy AES_set_decrypt_key/AES_decrypt are deprecated since
+     * OpenSSL 3.0. The result is byte-identical to the legacy code.)
+     */
+    EVP_CIPHER_CTX *dctx = EVP_CIPHER_CTX_new();
+    if(!dctx){
+        memset((unsigned char *)&affkey_seg,0,sizeof(affkey_seg)); // erase the temp data
+        return AF_ERROR_NO_AES;
+    }
+    EVP_CIPHER_CTX_set_padding(dctx,0);	// exactly 16-byte blocks; no padding
+    int dlen = 0, dok = 0;
+    if(EVP_DecryptInit_ex(dctx,EVP_aes_256_ecb(),NULL,passphrase_hash,NULL)==1){
+        dok =  EVP_DecryptUpdate(dctx,affkey_seg.affkey_aes256,&dlen,
+                                 affkey_seg.affkey_aes256,AFF_AES_BLOCK_SIZE)==1
+            && EVP_DecryptUpdate(dctx,affkey_seg.affkey_aes256+AFF_AES_BLOCK_SIZE,&dlen,
+                                 affkey_seg.affkey_aes256+AFF_AES_BLOCK_SIZE,AFF_AES_BLOCK_SIZE)==1
+            && EVP_DecryptUpdate(dctx,affkey_seg.zeros_aes256,&dlen,
+                                 affkey_seg.zeros_aes256,AFF_AES_BLOCK_SIZE)==1;
+    }
+    EVP_CIPHER_CTX_free(dctx);
+    if(!dok){
+        memset((unsigned char *)&affkey_seg,0,sizeof(affkey_seg)); // erase the temp data
+        return AF_ERROR_NO_AES;
+    }
 
     /* See if its zero? */
     for(u_int i=0;i<sizeof(affkey_seg.zeros_aes256);i++){

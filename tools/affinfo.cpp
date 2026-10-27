@@ -18,8 +18,7 @@
 
 #include <ctype.h>
 #include <zlib.h>
-#include <openssl/md5.h>
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 #include <assert.h>
 
 #include <algorithm>
@@ -189,21 +188,35 @@ void validate(const char *infile)
 	last = *i;
     }
 
-    /* Set up the hash machinery */
-    MD5_CTX md5;
-    MD5_Init(&md5);
+    /* Set up the hash machinery (via the stable EVP API; the low-level
+     * MD5 and SHA1 state functions are deprecated since OpenSSL 3.0) */
+    EVP_MD_CTX *md5ctx = EVP_MD_CTX_new();
+    EVP_MD_CTX *sha1ctx = EVP_MD_CTX_new();
+    if(opt_validate & VALIDATE_MD5){
+        const EVP_MD *md5_md = EVP_get_digestbyname("MD5");
+        if(!md5_md || EVP_DigestInit_ex(md5ctx,md5_md,NULL)!=1){
+            af_close(af);
+            return;
+        }
+    }
+    if(opt_validate & VALIDATE_SHA1){
+        const EVP_MD *sha1_md = EVP_get_digestbyname("SHA1");
+        if(!sha1_md || EVP_DigestInit_ex(sha1ctx,sha1_md,NULL)!=1){
+            EVP_MD_CTX_free(md5ctx);
+            EVP_MD_CTX_free(sha1ctx);
+            af_close(af);
+            return;
+        }
+    }
 
-    SHA_CTX sha;
-    SHA1_Init(&sha);
-    
     uint64_t total_bytes = 0;
     while(!af_eof(af)){
 	unsigned char buf[65536];		// a decent size
 	size_t bytes = af_read(af,buf,sizeof(buf));
 	if(bytes==0) break;		// reached sparse region of file
 	total_bytes += bytes;
-	if(opt_validate & VALIDATE_MD5) MD5_Update(&md5,buf,bytes);
-	if(opt_validate & VALIDATE_SHA1) SHA1_Update(&sha,buf,bytes);
+	if(opt_validate & VALIDATE_MD5) EVP_DigestUpdate(md5ctx,buf,bytes);
+	if(opt_validate & VALIDATE_SHA1) EVP_DigestUpdate(sha1ctx,buf,bytes);
     }
     
     /* Finish the hash calculations and write to the db */
@@ -213,8 +226,8 @@ void validate(const char *infile)
 	size_t md5len = sizeof(md5_stored);
 	unsigned char md5_computed[16];
 	char buf[256];
-	
-	MD5_Final(md5_computed,&md5);
+
+	EVP_DigestFinal_ex(md5ctx,md5_computed,NULL);
 	printf("computed md5: %s\n",
 	       af_hexbuf(buf,sizeof(buf),md5_computed,16,opt_hexbuf));
 	if(af_get_seg(af,AF_MD5,0,md5_stored,&md5len)==0){
@@ -241,7 +254,7 @@ void validate(const char *infile)
 	unsigned char sha1_computed[20];
 	char buf[256];
 	
-	SHA1_Final(sha1_computed,&sha);
+	EVP_DigestFinal_ex(sha1ctx,sha1_computed,NULL);
 	printf("computed sha1: %s \n",af_hexbuf(buf,sizeof(buf),sha1_computed,20,opt_hexbuf));
 	if(af_get_seg(af,AF_SHA1,0,sha1_stored,&sha1len)==0){
 	    printf("  stored sha1: %s ",af_hexbuf(buf,sizeof(buf),sha1_stored,20,opt_hexbuf));
@@ -258,7 +271,10 @@ void validate(const char *infile)
 	    printf("(no SHA1 in AFF file)\n");
 	}
     }
-    
+
+    EVP_MD_CTX_free(md5ctx);
+    EVP_MD_CTX_free(sha1ctx);
+
     af_close(af);
 }
 
@@ -415,10 +431,14 @@ void print_info(AFFILE *af,const char *segname)
     cc = output_line + strlen(output_line);
 
     if(opt_preview_md5){
-	u_char md5[32];
-	MD5(data,data_len,md5);
-	memcpy(data,md5,32);
-	data_len = 32;
+        /* Show an MD5 preview of the segment (16 bytes).
+         * (Previously this used an oversized 32-byte buffer and copied 16
+         *  bytes of stack garbage after the hash; fixed while migrating
+         *  off the deprecated one-shot MD5() API.) */
+	u_char md5[16];
+	af_MD5((const unsigned char *)data,data_len,md5);
+	memcpy(data,md5,16);
+	data_len = 16;
     }
     if(display_as_hex(segname,display_len)){
 	char buf[82];
@@ -481,7 +501,7 @@ void print_info(AFFILE *af,const char *segname)
 	    goto skip1;
 	}
 	
-	MD5(page_data,page_data_len,hash_calc);
+	af_MD5((const unsigned char *)page_data,page_data_len,hash_calc);
 	if(memcmp(hash_buf,hash_calc,sizeof(hash_buf))!=0){
 	    char hb[32];
 	    printf("** HASH INVALID **\n%30s Calculated %s\n","",

@@ -48,8 +48,6 @@
 #include "afflib.h"
 #include "afflib_i.h"
 
-#include <openssl/md5.h>
-#include <openssl/sha.h>
 #include <zlib.h>
 #include <assert.h>
 

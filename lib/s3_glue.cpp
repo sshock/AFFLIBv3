@@ -27,8 +27,8 @@
 #include <time.h>
 #include <netinet/in.h>
 
-#ifdef HAVE_OPENSSL_MD5_H
-#include <openssl/md5.h>
+#ifdef HAVE_MD5
+#include <openssl/evp.h>
 #endif
 
 #ifdef HAVE_OPENSSL_HMAC_H
@@ -43,7 +43,7 @@
 #include <ctype.h>
 #endif
 
-#if !defined(HAVE_OPENSSL_MD5_H)
+#if !defined(HAVE_MD5)
 #error S3 support requires MD5 support
 #endif
 
@@ -641,7 +641,7 @@ int object_put(string bucket,string path,
 {
     unsigned char md5[16];
     memset(md5,0,sizeof(md5));
-    MD5((const unsigned char *)buf,buflen,md5);
+    af_MD5((const unsigned char *)buf,buflen,md5);
     for(int i=0;i<s3_retry_max;i++){
 	s3_object_put_retry_count = i;
 	if(i>0){

@@ -15,8 +15,7 @@
 #include "afflib_i.h"			// we do enough mucking, we need the internal version
 #include "utils.h"
 
-#include <openssl/md5.h>
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 
 #ifdef WIN32
 #include "unix4win32.h"
@@ -320,11 +319,29 @@ int convert(const char *infile,char *outfile)
      *** stuff that we keep at the beginning of the file...
      ****************************************************************/
 
-    MD5_CTX md5;
-    MD5_Init(&md5);
-
-    SHA_CTX sha;
-    SHA1_Init(&sha);
+    /* Set up the MD5/SHA1 hash machinery via the stable EVP API
+     * (the low-level MD5/SHA1 state functions are deprecated
+     *  since OpenSSL 3.0) */
+    EVP_MD_CTX *md5ctx = EVP_MD_CTX_new();
+    EVP_MD_CTX *sha1ctx = EVP_MD_CTX_new();
+    if(!md5ctx || !sha1ctx){
+	af_close(a_out);
+	af_close(a_in);
+	return -1;
+    }
+    {
+        const EVP_MD *md5_md   = EVP_get_digestbyname("MD5");
+        const EVP_MD *sha1_md  = EVP_get_digestbyname("SHA1");
+        if(!md5_md || !sha1_md ||
+           EVP_DigestInit_ex(md5ctx,md5_md,NULL)!=1 ||
+           EVP_DigestInit_ex(sha1ctx,sha1_md,NULL)!=1){
+            EVP_MD_CTX_free(md5ctx);
+            EVP_MD_CTX_free(sha1ctx);
+            af_close(a_out);
+            af_close(a_in);
+            return -1;
+        }
+    }
 
     /* Setup writing */
     if(a_in->image_pagesize){
@@ -429,8 +446,8 @@ int convert(const char *infile,char *outfile)
 	    if(pagenum != prev_pagenum + 1) hash_valid = false;
 	    
 	    if(hash_valid && vni.supports_metadata){
-		MD5_Update(&md5,data,data_len);
-		SHA1_Update(&sha,data,data_len);
+		EVP_DigestUpdate(md5ctx,data,data_len);
+		EVP_DigestUpdate(sha1ctx,data,data_len);
 		prev_pagenum = pagenum;
 	    }
 	    last_byte_in_image = (int64_t)image_pagesize * pagenum + (int64_t)data_len;
@@ -455,8 +472,8 @@ int convert(const char *infile,char *outfile)
 		    err(1,"af_write");
 		}
 		if(vni.supports_metadata){
-		    MD5_Update(&md5,data,data_len);
-		    SHA1_Update(&sha,data,data_len);
+		    EVP_DigestUpdate(md5ctx,data,data_len);
+		    EVP_DigestUpdate(sha1ctx,data,data_len);
 		}
 	    }
 	    if(data_len<0) err(1,"af_read");
@@ -475,18 +492,21 @@ int convert(const char *infile,char *outfile)
     if(hash_valid && vni.supports_metadata){
 	u_char md5_buf[32],sha1_buf[40];
 	char buf[256];
-	MD5_Final(md5_buf,&md5);
+	EVP_DigestFinal_ex(md5ctx,md5_buf,NULL);
 	if(af_update_seg(a_out,AF_MD5,0,md5_buf,16) && errno!=ENOTSUP){
 	    err(1,"Could not update AF_MD5");
 	}
 	if(!opt_quiet) printf("md5: %s\n",af_hexbuf(buf,sizeof(buf),md5_buf,16,1));
-	
-	SHA1_Final(sha1_buf,&sha);
+
+	EVP_DigestFinal_ex(sha1ctx,sha1_buf,NULL);
 	if(af_update_seg(a_out,AF_SHA1,0,sha1_buf,20) && errno!=ENOTSUP){
 	    err(1,"Could not update AF_SHA1");
 	}
 	if(!opt_quiet) printf("sha1: %s\n",af_hexbuf(buf,sizeof(buf),sha1_buf,20,1));
     }
+
+    EVP_MD_CTX_free(md5ctx);
+    EVP_MD_CTX_free(sha1ctx);
 
     /* Finish the hash calculations and write to the db */
     if(!opt_quiet){
