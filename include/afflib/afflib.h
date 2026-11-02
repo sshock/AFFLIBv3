@@ -452,7 +452,7 @@ int af_hash_verify_seg2(AFFILE *af,const char *segname,unsigned char *sigbuf_,si
 #define AF_PAGE_COMP_MAX        0x0002	// compressed at maximum; nice to know
 #define AF_PAGE_COMP_ALG_MASK   0x00F0	// up to 16 compression algorithms may be used
 #define AF_PAGE_COMP_ALG_ZLIB   0x0000
-#define AF_PAGE_COMP_ALG_BZIP   0x0010	// not implemented; why bother?
+#define AF_PAGE_COMP_ALG_BZIP   0x0010	// originally reserved for bzip2 compression but never implemented
 #define AF_PAGE_COMP_ALG_LZMA   0x0020	// high compression but pretty slow
 #define AF_PAGE_COMP_ALG_ZERO   0x0030  // Data segment is a 4-byte value of # of NULLs.
 

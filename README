@@ -7,19 +7,37 @@
 	2014-2025 Phillip Hellewell <sshock@gmail.com>
 
 The Advanced Forensic Format (AFF) is on-disk format for storing
-computer forensic information. Critical features of AFF include:
+computer forensic information.
 
-  - AFF allows you to store both computer forensic data and associated
-    metadata in one or more files. 
+Project information:
 
-  - AFF allows files to be digital signed, to provide for
+  * Status: maintenance mode, since AFF4 supersedes AFF
+  * License: Original 4-Clause BSD License
+
+Supported AFF formats and features:
+
+  * AFF version 1, 2 and 3
+  * zlib, LZMA1 and zero-page compression
+  * AFF directory (AFD) segmented format
+
+Unsupported AFF formats and features:
+
+  * bzip2 compression
+
+
+Critical features of AFF include:
+
+  * AFF allows you to store both computer forensic data and associated
+    metadata in one or more files.
+
+  * AFF allows files to be digital signed, to provide for
     chain-of-custody and long-term file integrity.
 
-  - AFF allows for forensic disk images to stored encrypted and
+  * AFF allows for forensic disk images to stored encrypted and
     decrypted on-the-fly for processing. This allows disk images
     containing privacy sensitive material to be stored on the Internet.
 
-  - AFF is an open format unencumbered by copyright or patent
+  * AFF is an open format unencumbered by copyright or patent
     protection. The AFFLIB library that implements AFF is available
     for use in both Open Source and proprietary tools.
 
@@ -28,14 +46,14 @@ forensic information. Using these tools you can:
 
  * Interconvert disk images between a variety of formats, including:
 
-   - raw or "dd" 
-   - splitraw (in which a single image is split between mulitple files)
-   - AFF format (in which the entire disk image is stored in a single file.)
-   - AFD format (in which a disk image is stored in mulitple AFF files
+   * raw or "dd"
+   * splitraw (in which a single image is split between mulitple files)
+   * AFF format (in which the entire disk image is stored in a single file.)
+   * AFD format (in which a disk image is stored in mulitple AFF files
      stored in a single directory.)
-   - AFM format (in which an AFF file is used to annotate a raw file.)
+   * AFM format (in which an AFF file is used to annotate a raw file.)
 
- * Compare disk images and report the data or metadata that is different. 
+ * Compare disk images and report the data or metadata that is different.
 
  * Copy disk images from one location to another, with full
    verification of data, metadata, and the automatic generation of a
@@ -55,6 +73,7 @@ forensic information. Using these tools you can:
    fingerprinted without having the computer the SHA1 of the entire
    disk.
 
+
 AFFLIBv3 implements version 3 of the AFF format. This version is
 currently in maintenance mode while work on AFFv4 continues. Key
 differences between AFFv3 and AFFv4 include:
@@ -66,9 +85,8 @@ differences between AFFv3 and AFFv4 include:
    is licensed an approved Open Source license.
 
 
-
 AFFLIB and Toolkit is provided in source code form for Linux, MacOS
-and Windows. We have also created a Windows zipfile that contains:
+and Windows. We have also created a Windows ZIP file that contains:
 
  * precompiled versions of the AFFLIB tools and all of the libraries
    necessary to run them.
@@ -89,12 +107,6 @@ supports.  To use the other image formats, specify the image type as
 
 
 # fls -o 63 -i afflib foo.vmdk
-
-
-
-================
-Note: AFF and AFFLIB are trademarks of Simson L. Garfinkel and Basis
-Technology, Inc. 
 
 
 # Local Variables:
