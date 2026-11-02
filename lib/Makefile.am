@@ -28,7 +28,6 @@ libafflib_la_SOURCES = $(AFFLIB_SOURCES)
 QEMU_SOURCES = \
 	vnode_qemu.cpp \
 	vnode_qemu.h \
-	qemu/aes.h \
 	qemu/aff-block-vmdk.h \
 	qemu/block-bochs.c \
 	qemu/block-cloop.c \

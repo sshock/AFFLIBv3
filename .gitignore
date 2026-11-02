@@ -63,6 +63,7 @@ config.log
 config.status
 config.sub
 configure
+INSTALL
 install-sh
 libtool
 ltmain.sh

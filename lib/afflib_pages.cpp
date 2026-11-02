@@ -388,7 +388,7 @@ int af_update_page(AFFILE *af,int64_t pagenum,unsigned char *data,int datalen)
     if(af->write_md5){
 	unsigned char md5_buf[16];
 	char md5name_buf[32];
-	MD5(data,datalen,md5_buf);
+	af_MD5((const unsigned char *)data,datalen,md5_buf);
 	snprintf(md5name_buf,sizeof(md5name_buf),AF_PAGE_MD5,pagenum);
 	af_update_segf(af,md5name_buf,0,md5_buf,sizeof(md5_buf),AF_SIGFLAG_NOSIG); // ignore failure
     }
@@ -398,7 +398,7 @@ int af_update_page(AFFILE *af,int64_t pagenum,unsigned char *data,int datalen)
     if(af->write_sha1){
 	unsigned char sha1_buf[20];
 	char sha1name_buf[32];
-	SHA1(data,datalen,sha1_buf);
+	af_sha1((const unsigned char *)data,datalen,sha1_buf);
 	snprintf(sha1name_buf,sizeof(sha1name_buf),AF_PAGE_SHA1,pagenum);
 	af_update_segf(af,sha1name_buf,0,sha1_buf,sizeof(sha1_buf),AF_SIGFLAG_NOSIG); // ignore failure
     }
