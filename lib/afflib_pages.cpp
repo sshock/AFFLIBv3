@@ -20,6 +20,17 @@ void af_read_sizes(AFFILE *af)
 	af_get_seg(af,AF_SEGSIZE_D,&af->image_pagesize,0,0); // try old name
     }
 
+    /* A page must be a whole number of sectors, and neither value may be absurd.
+     * Reject inconsistent geometry from an untrusted image before it is used
+     * to size or fill a page buffer.
+     */
+    if(af->image_sectorsize == 0) af->image_sectorsize = 512; // may be redundant; we already do this above
+    if(af->image_pagesize > 16*1024*1024
+       || af->image_sectorsize > af->image_pagesize
+       || (af->image_pagesize % af->image_sectorsize) != 0){
+        af->image_pagesize = 0; // mark the geometry invalid; TODO: audit all code and verify it handles 0
+    }
+
     /* Read the badflag if it is present.
      * Be sure to adjust badflag size to current sector size (which may have changed).
      */
@@ -180,7 +191,8 @@ int af_get_page(AFFILE *af,int64_t pagenum,unsigned char *data,size_t *bytes)
 	 * If we have been provided with a buffer,
 	 * fill buffer with the 'bad segment' flag and return.
 	 */
-	if(data && (af->openmode & AF_BADBLOCK_FILL) && errno == ENOENT)
+	if(data && (af->openmode & AF_BADBLOCK_FILL) && errno == ENOENT
+	   && af->image_sectorsize > 0 && af->image_pagesize >= af->image_sectorsize)
 	{
 	    for(size_t i = 0;i <= af->image_pagesize - af->image_sectorsize;
 		i+= af->image_sectorsize){
