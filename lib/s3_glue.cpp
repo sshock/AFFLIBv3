@@ -18,7 +18,7 @@
 #define BAD_STL
 #endif
 
-
+#include "afflib.h"
 #include "s3_glue.h"
 #include "curl/curl.h"
 #include "base64.h"
